@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Bible Quotes",
+  "description": "Shows a random bible quote",
+  "version": "1.0",
+  "permissions": [
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "host_permissions": [
+    "file:///*"
+  ]
+}
