@@ -4,12 +4,23 @@
   "description": "Shows a random bible quote",
   "version": "1.0.1",
   "permissions": [
-    "storage"
+    "storage",
+    "activeTab"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html"
   },
   "host_permissions": [
-    "file:///*"
+    "file:///*",
+    "https://www.google.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.google.com/*"],
+      "js": ["content.js"]
+    }
   ]
 }
