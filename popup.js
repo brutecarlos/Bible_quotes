@@ -1,29 +1,29 @@
-let quotesData = {}; // Se cargará el JSON aquí
+let quotesData = {}; // JSON data will be loaded here
 
-// Cargar JSON al iniciar
+// Loads JSON data at startup
 async function loadQuotes() {
     try {
-        const response = await fetch('quotes.json'); // Asegúrate de que el path sea correcto
-        if (!response.ok) throw new Error("No se pudo cargar el archivo JSON");
+        const response = await fetch('quotes.json'); 
+        if (!response.ok) throw new Error("Could not load the JSON file");
 
         quotesData = await response.json();
-        displayQuote(); // Mostrar una cita después de cargar el JSON
+        displayQuote();
     } catch (error) {
-        console.error("Error cargando las citas:", error);
-        document.getElementById('quote').innerHTML = "No se pudieron cargar las citas.";
+        console.error("Error loading quotes:", error);
+        document.getElementById('quote').innerHTML = "Could not load quotes.";
     }
 }
 
-// Obtener una cita aleatoria
+// Get a random quote
 function getRandomQuote() {
     let allQuotes = [];
 
-    if (!quotesData.books || !Array.isArray(quotesData.books)) return { reference: "Error", text: "No hay citas disponibles." };
+    if (!quotesData.books || !Array.isArray(quotesData.books)) return { reference: "Error", text: "No quotes available." };
 
     quotesData.books.forEach(book => {
         book.chapters.forEach(chapter => {
             chapter.verses.forEach(verse => {
-                if (verse.text) { // Asegurar que tenga texto
+                if (verse.text) { // Ensure it has text
                     allQuotes.push({
                         reference: verse.reference,
                         text: verse.text
@@ -33,20 +33,20 @@ function getRandomQuote() {
         });
     });
 
-    if (allQuotes.length === 0) return { reference: "Error", text: "No hay citas disponibles." };
+    if (allQuotes.length === 0) return { reference: "Error", text: "No quotes available." };
 
     const randomIndex = Math.floor(Math.random() * allQuotes.length);
     return allQuotes[randomIndex];
 }
 
-// Mostrar la cita en la extensión
+// Display the quote in the extension
 function displayQuote() {
     const quote = getRandomQuote();
     document.getElementById('quote').innerHTML = `<strong>${quote.reference}:</strong> ${quote.text}`;
 }
 
-// Cargar las citas cuando la página se cargue
+// Load the quotes when the page loads
 document.addEventListener('DOMContentLoaded', loadQuotes);
 
-// Botón para generar una nueva cita
+// Button to generate a new quote
 document.getElementById('newQuoteBtn').addEventListener('click', displayQuote);
