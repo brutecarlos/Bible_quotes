@@ -1,5 +1,5 @@
-// Function to get a random quote from storage
-function getRandomQuote() {
+// Function to get random quotes from storage
+function getRandomQuotes(count) {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get('quotes', (result) => {
       if (chrome.runtime.lastError) {
@@ -7,8 +7,12 @@ function getRandomQuote() {
       } else {
         const quotes = result.quotes;
         if (quotes && quotes.length > 0) {
-          const randomIndex = Math.floor(Math.random() * quotes.length);
-          resolve(quotes[randomIndex]);
+          const randomQuotes = [];
+          for (let i = 0; i < count; i++) {
+            const randomIndex = Math.floor(Math.random() * quotes.length);
+            randomQuotes.push(quotes[randomIndex]);
+          }
+          resolve(randomQuotes);
         } else {
           reject('No quotes found');
         }
@@ -17,17 +21,25 @@ function getRandomQuote() {
   });
 }
 
-// Function to inject the quote into the Google search page
-function injectQuote(quote) {
-  console.log('Injecting quote:', quote);
-  const quoteElement = document.createElement('div');
-  quoteElement.style.width = '100%';
-  quoteElement.style.padding = '15px';
-  quoteElement.style.marginBottom = '20px';
-  quoteElement.style.textAlign = 'center';
-  quoteElement.style.backgroundColor = '#fff3cd';
-  quoteElement.style.color = '#856404';
-  quoteElement.textContent = quote;
+// Function to inject the quotes into the Google search page
+function injectQuotes(quotes) {
+  console.log('Injecting quotes:', quotes);
+  const quotesContainer = document.createElement('div');
+  quotesContainer.style.width = '100%';
+  quotesContainer.style.padding = '15px';
+  quotesContainer.style.marginBottom = '20px';
+  quotesContainer.style.textAlign = 'center';
+  quotesContainer.style.backgroundColor = '#fff3cd';
+  quotesContainer.style.color = '#856404';
+
+  quotes.forEach(quote => {
+    const quoteElement = document.createElement('p'); // Use <p> for each quote
+    const [text, reference] = quote.split(' - '); // Split the quote into text and reference
+    // Ensure the reference is bold
+    quoteElement.innerHTML = `${text} - <strong>${reference}</strong>`;
+    quoteElement.style.margin = '10px 0'; // Add spacing between paragraphs
+    quotesContainer.appendChild(quoteElement);
+  });
 
   // Apply styles for Dark mode
   const darkModeStyles = `
@@ -46,23 +58,31 @@ function injectQuote(quote) {
   `;
   document.head.appendChild(styleElement);
 
-  // Add a class to the quote element for styling
-  quoteElement.classList.add('quote-element');
+  // Add a class to the quotes container for styling
+  quotesContainer.classList.add('quote-element');
 
-  // Insert the quote element before the search results container
+  // Insert the quotes container before the search results container
   const searchResultsContainer = document.getElementById('search');
   if (searchResultsContainer) {
-    searchResultsContainer.prepend(quoteElement);
+    searchResultsContainer.prepend(quotesContainer);
   } else {
     console.error('Search results container not found');
   }
 }
 
-// Get a random quote and inject it into the page
-getRandomQuote()
-  .then((quote) => {
-    injectQuote(quote);
-  })
-  .catch((error) => {
-    console.error('Error getting quote:', error);
-  });
+// Get the user's preference for the number of quotes and inject them into the page
+chrome.storage.sync.get(['quoteCount', 'enableQuotes'], (result) => {
+  console.log('User preferences:', result);
+  if (result.enableQuotes !== false) { // Default to true if not set
+    const quoteCount = result.quoteCount || 1; // Default to 1 if not set
+    getRandomQuotes(quoteCount)
+      .then((quotes) => {
+        injectQuotes(quotes);
+      })
+      .catch((error) => {
+        console.error('Error getting quotes:', error);
+      });
+  } else {
+    console.log('Quote generation is disabled.');
+  }
+});

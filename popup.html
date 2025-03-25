@@ -10,11 +10,25 @@
       .quote {
         font-size: 16px;
         line-height: 1.5;
+        margin-bottom: 10px;
       }
     </style>
   </head>
   <body>
     <div id="quote" class="quote"></div>
+    <button id="newQuoteBtn">New Quote</button>
+    <div>
+      <label for="quoteCount">Number of quotes to display:</label>
+      <select id="quoteCount">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+      </select>
+    </div>
+    <div>
+      <label for="enableQuotes">Enable quote generation on searches:</label>
+      <input type="checkbox" id="enableQuotes">
+    </div>
     <script src="popup.js"></script>
   </body>
 </html>
