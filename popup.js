@@ -1,83 +1,370 @@
-let quotesData = {}; // JSON data will be loaded here
+/**
+ * Bible Quotes Chrome Extension - Popup Script
+ * Modern implementation with enhanced features and error handling
+ */
 
-// Loads JSON data at startup
-async function loadQuotes() {
+class BibleQuotesPopup {
+  constructor() {
+    this.quotesData = {};
+    this.currentQuotes = [];
+    this.isLoading = false;
+    this.init();
+  }
+
+  /**
+   * Initialize the popup
+   */
+  async init() {
     try {
-        const response = await fetch('quotes.json'); 
-        if (!response.ok) throw new Error("Could not load the JSON file");
-
-        quotesData = await response.json();
-        displayQuotes();
+      await this.loadUserPreferences();
+      await this.loadQuotes();
+      this.setupEventListeners();
+      this.displayQuotes();
     } catch (error) {
-        console.error("Error loading quotes:", error);
-        document.getElementById('quote').innerHTML = "Could not load quotes.";
+      console.error('Initialization error:', error);
+      this.showError('Failed to initialize the extension');
     }
-}
+  }
 
-// Get random quotes
-function getRandomQuotes(count) {
-    let allQuotes = [];
+  /**
+   * Load quotes from JSON file
+   */
+  async loadQuotes() {
+    this.showLoading(true);
+    
+    try {
+      const response = await fetch(chrome.runtime.getURL('quotes.json'));
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      this.quotesData = await response.json();
+      this.showLoading(false);
+    } catch (error) {
+      console.error('Error loading quotes:', error);
+      this.showError('Could not load quotes. Please check your internet connection.');
+      this.showLoading(false);
+    }
+  }
 
-    if (!quotesData.books || !Array.isArray(quotesData.books)) return [{ reference: "Error", text: "No quotes available." }];
+  /**
+   * Load user preferences from Chrome storage
+   */
+  async loadUserPreferences() {
+    return new Promise((resolve) => {
+      chrome.storage.sync.get({
+        quoteCount: 1,
+        enableQuotes: true,
+        enableFavorites: false,
+        favorites: []
+      }, (result) => {
+        this.preferences = result;
+        this.updateUIFromPreferences();
+        resolve(result);
+      });
+    });
+  }
 
-    quotesData.books.forEach(book => {
-        book.chapters.forEach(chapter => {
-            chapter.verses.forEach(verse => {
-                if (verse.text) { // Ensure it has text
-                    allQuotes.push({
-                        reference: verse.reference,
-                        text: verse.text
-                    });
-                }
+  /**
+   * Update UI elements based on stored preferences
+   */
+  updateUIFromPreferences() {
+    const { quoteCount, enableQuotes, enableFavorites } = this.preferences;
+    
+    document.getElementById('quoteCount').value = quoteCount;
+    document.getElementById('enableQuotes').checked = enableQuotes;
+    document.getElementById('enableFavorites').checked = enableFavorites;
+    
+    // Show/hide favorites button based on preference
+    const favoriteBtn = document.getElementById('favoriteBtn');
+    favoriteBtn.style.display = enableFavorites ? 'block' : 'none';
+  }
+
+  /**
+   * Get random quotes from the loaded data
+   */
+  getRandomQuotes(count = 1) {
+    if (!this.quotesData.books || !Array.isArray(this.quotesData.books)) {
+      return [{ reference: "Error", text: "No quotes available." }];
+    }
+
+    const allQuotes = [];
+    
+    this.quotesData.books.forEach(book => {
+      book.chapters.forEach(chapter => {
+        chapter.verses.forEach(verse => {
+          if (verse.text && verse.reference) {
+            allQuotes.push({
+              reference: verse.reference,
+              text: verse.text,
+              book: book.name,
+              chapter: chapter.number
             });
+          }
         });
+      });
     });
 
-    if (allQuotes.length === 0) return [{ reference: "Error", text: "No quotes available." }];
-
-    const randomQuotes = [];
-    for (let i = 0; i < count; i++) {
-        const randomIndex = Math.floor(Math.random() * allQuotes.length);
-        randomQuotes.push(allQuotes[randomIndex]);
+    if (allQuotes.length === 0) {
+      return [{ reference: "Error", text: "No quotes available." }];
     }
-    return randomQuotes;
-}
 
-// Display the quotes in the extension
-function displayQuotes() {
+    // Get unique random quotes
+    const randomQuotes = [];
+    const usedIndices = new Set();
+    
+    for (let i = 0; i < Math.min(count, allQuotes.length); i++) {
+      let randomIndex;
+      do {
+        randomIndex = Math.floor(Math.random() * allQuotes.length);
+      } while (usedIndices.has(randomIndex));
+      
+      usedIndices.add(randomIndex);
+      randomQuotes.push(allQuotes[randomIndex]);
+    }
+
+    return randomQuotes;
+  }
+
+  /**
+   * Display quotes in the popup
+   */
+  displayQuotes() {
     const quoteCount = parseInt(document.getElementById('quoteCount').value, 10);
-    const quotes = getRandomQuotes(quoteCount);
+    this.currentQuotes = this.getRandomQuotes(quoteCount);
+    
     const quoteContainer = document.getElementById('quote');
     quoteContainer.innerHTML = '';
-    quotes.forEach(quote => {
-        const quoteElement = document.createElement('div');
-        // Format the quote with the reference at the end in bold
-        quoteElement.innerHTML = `${quote.text} - <strong>${quote.reference}</strong>`;
-        quoteContainer.appendChild(quoteElement);
+    
+    this.currentQuotes.forEach((quote, index) => {
+      const quoteElement = this.createQuoteElement(quote, index);
+      quoteContainer.appendChild(quoteElement);
     });
+
+    // Update favorites button state
+    this.updateFavoritesButton();
+  }
+
+  /**
+   * Create a quote element with modern styling
+   */
+  createQuoteElement(quote, index) {
+    const quoteDiv = document.createElement('div');
+    quoteDiv.className = 'quote fade-in';
+    quoteDiv.setAttribute('data-quote-index', index);
+    
+    const textDiv = document.createElement('div');
+    textDiv.className = 'quote-text';
+    textDiv.textContent = quote.text;
+    
+    const referenceDiv = document.createElement('div');
+    referenceDiv.className = 'quote-reference';
+    referenceDiv.textContent = quote.reference;
+    
+    quoteDiv.appendChild(textDiv);
+    quoteDiv.appendChild(referenceDiv);
+    
+    return quoteDiv;
+  }
+
+  /**
+   * Show loading state
+   */
+  showLoading(show) {
+    this.isLoading = show;
+    const loadingElement = document.getElementById('loading');
+    const quoteContainer = document.getElementById('quote');
+    
+    if (show) {
+      loadingElement.style.display = 'block';
+      quoteContainer.style.display = 'none';
+    } else {
+      loadingElement.style.display = 'none';
+      quoteContainer.style.display = 'block';
+    }
+  }
+
+  /**
+   * Show error message
+   */
+  showError(message) {
+    const errorElement = document.getElementById('error');
+    errorElement.querySelector('p').textContent = message;
+    errorElement.style.display = 'block';
+    
+    // Hide error after 5 seconds
+    setTimeout(() => {
+      errorElement.style.display = 'none';
+    }, 5000);
+  }
+
+  /**
+   * Show success message
+   */
+  showSuccess(message) {
+    const successElement = document.getElementById('success');
+    successElement.querySelector('p').textContent = message;
+    successElement.style.display = 'block';
+    
+    // Hide success after 3 seconds
+    setTimeout(() => {
+      successElement.style.display = 'none';
+    }, 3000);
+  }
+
+  /**
+   * Save user preferences
+   */
+  async savePreferences() {
+    const preferences = {
+      quoteCount: parseInt(document.getElementById('quoteCount').value, 10),
+      enableQuotes: document.getElementById('enableQuotes').checked,
+      enableFavorites: document.getElementById('enableFavorites').checked
+    };
+
+    return new Promise((resolve) => {
+      chrome.storage.sync.set(preferences, () => {
+        this.preferences = { ...this.preferences, ...preferences };
+        this.showSuccess('Settings saved successfully!');
+        resolve();
+      });
+    });
+  }
+
+  /**
+   * Add current quote to favorites
+   */
+  async addToFavorites() {
+    if (!this.currentQuotes || this.currentQuotes.length === 0) {
+      this.showError('No quote to add to favorites');
+      return;
+    }
+
+    const currentFavorites = this.preferences.favorites || [];
+    const newFavorites = [...currentFavorites];
+    
+    this.currentQuotes.forEach(quote => {
+      const quoteString = `${quote.text} - ${quote.reference}`;
+      if (!newFavorites.includes(quoteString)) {
+        newFavorites.push(quoteString);
+      }
+    });
+
+    return new Promise((resolve) => {
+      chrome.storage.sync.set({ favorites: newFavorites }, () => {
+        this.preferences.favorites = newFavorites;
+        this.showSuccess('Added to favorites!');
+        this.updateFavoritesButton();
+        resolve();
+      });
+    });
+  }
+
+  /**
+   * Update favorites button state
+   */
+  updateFavoritesButton() {
+    const favoriteBtn = document.getElementById('favoriteBtn');
+    if (!this.preferences.enableFavorites) return;
+
+    const currentFavorites = this.preferences.favorites || [];
+    const currentQuoteStrings = this.currentQuotes.map(q => `${q.text} - ${q.reference}`);
+    
+    const allInFavorites = currentQuoteStrings.every(quote => 
+      currentFavorites.includes(quote)
+    );
+
+    if (allInFavorites) {
+      favoriteBtn.textContent = '⭐ In Favorites';
+      favoriteBtn.disabled = true;
+    } else {
+      favoriteBtn.textContent = '⭐ Add to Favorites';
+      favoriteBtn.disabled = false;
+    }
+  }
+
+  /**
+   * Share current quote
+   */
+  async shareQuote() {
+    if (!this.currentQuotes || this.currentQuotes.length === 0) {
+      this.showError('No quote to share');
+      return;
+    }
+
+    const quoteText = this.currentQuotes.map(q => 
+      `${q.text} - ${q.reference}`
+    ).join('\n\n');
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Bible Quote',
+          text: quoteText,
+          url: 'https://chrome.google.com/webstore/detail/bible-quotes'
+        });
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(quoteText);
+        this.showSuccess('Quote copied to clipboard!');
+      }
+    } catch (error) {
+      console.error('Error sharing quote:', error);
+      this.showError('Failed to share quote');
+    }
+  }
+
+  /**
+   * Setup event listeners
+   */
+  setupEventListeners() {
+    // New quote button
+    document.getElementById('newQuoteBtn').addEventListener('click', () => {
+      if (!this.isLoading) {
+        this.displayQuotes();
+      }
+    });
+
+    // Quote count selector
+    document.getElementById('quoteCount').addEventListener('change', async () => {
+      await this.savePreferences();
+      this.displayQuotes();
+    });
+
+    // Enable quotes checkbox
+    document.getElementById('enableQuotes').addEventListener('change', async () => {
+      await this.savePreferences();
+    });
+
+    // Enable favorites checkbox
+    document.getElementById('enableFavorites').addEventListener('change', async () => {
+      await this.savePreferences();
+      this.updateUIFromPreferences();
+    });
+
+    // Favorite button
+    document.getElementById('favoriteBtn').addEventListener('click', async () => {
+      await this.addToFavorites();
+    });
+
+    // Share button
+    document.getElementById('shareBtn').addEventListener('click', async () => {
+      await this.shareQuote();
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        if (!this.isLoading) {
+          this.displayQuotes();
+        }
+      }
+    });
+  }
 }
 
-// Load the quotes when the page loads
+// Initialize the popup when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    loadQuotes();
-    chrome.storage.sync.get(['quoteCount', 'enableQuotes'], (result) => {
-        document.getElementById('quoteCount').value = result.quoteCount || 1;
-        document.getElementById('enableQuotes').checked = result.enableQuotes !== false;
-    });
-});
-
-// Button to generate new quotes
-document.getElementById('newQuoteBtn').addEventListener('click', displayQuotes);
-
-// Save the user's preference for the number of quotes
-document.getElementById('quoteCount').addEventListener('change', () => {
-    const quoteCount = parseInt(document.getElementById('quoteCount').value, 10);
-    chrome.storage.sync.set({ quoteCount: quoteCount });
-    displayQuotes();
-});
-
-// Save the user's preference for enabling or disabling quote generation
-document.getElementById('enableQuotes').addEventListener('change', () => {
-    const enableQuotes = document.getElementById('enableQuotes').checked;
-    chrome.storage.sync.set({ enableQuotes: enableQuotes });
+  new BibleQuotesPopup();
 });

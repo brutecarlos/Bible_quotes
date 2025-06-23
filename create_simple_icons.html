@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bible Quotes Icon Generator - Simple</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .icon-item {
+            text-align: center;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+        }
+        .icon-item h3 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+        }
+        .icon-display {
+            margin: 15px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .download-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        .download-all {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            font-size: 18px;
+            padding: 15px 30px;
+            margin: 20px auto;
+            display: block;
+        }
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        .instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 8px 0;
+            color: #424242;
+        }
+        .instructions code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📖 Bible Quotes Extension Icon Generator</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">
+            Generate beautiful icons with Latin cross design
+        </p>
+        
+        <div class="icon-grid">
+            <div class="icon-item">
+                <h3>16x16 (Toolbar)</h3>
+                <div class="icon-display">
+                    <svg id="svg16" width="16" height="16" viewBox="0 0 16 16">
+                        <!-- Icon will be generated here -->
+                    </svg>
+                </div>
+                <button class="download-btn" onclick="downloadIcon(16)">Download 16x16</button>
+            </div>
+            
+            <div class="icon-item">
+                <h3>32x32 (Windows)</h3>
+                <div class="icon-display">
+                    <svg id="svg32" width="32" height="32" viewBox="0 0 32 32">
+                        <!-- Icon will be generated here -->
+                    </svg>
+                </div>
+                <button class="download-btn" onclick="downloadIcon(32)">Download 32x32</button>
+            </div>
+            
+            <div class="icon-item">
+                <h3>48x48 (Extension Page)</h3>
+                <div class="icon-display">
+                    <svg id="svg48" width="48" height="48" viewBox="0 0 48 48">
+                        <!-- Icon will be generated here -->
+                    </svg>
+                </div>
+                <button class="download-btn" onclick="downloadIcon(48)">Download 48x48</button>
+            </div>
+            
+            <div class="icon-item">
+                <h3>128x128 (Web Store)</h3>
+                <div class="icon-display">
+                    <svg id="svg128" width="128" height="128" viewBox="0 0 128 128">
+                        <!-- Icon will be generated here -->
+                    </svg>
+                </div>
+                <button class="download-btn" onclick="downloadIcon(128)">Download 128x128</button>
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="download-btn download-all" onclick="downloadAllIcons()">
+                📥 Download All Icons
+            </button>
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 Instructions:</h3>
+            <ol>
+                <li>Click "Download All Icons" to get all icon sizes</li>
+                <li>Move the downloaded PNG files to the <code>icons/</code> folder in your extension</li>
+                <li>Rename them to: <code>icon16.png</code>, <code>icon32.png</code>, <code>icon48.png</code>, <code>icon128.png</code></li>
+                <li>Update your <code>manifest.json</code> to include the icon references</li>
+                <li>Reload your extension in Chrome (go to <code>chrome://extensions/</code> and click reload)</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Bible Quotes icon design - book with Latin cross (traditional Christian cross)
+        function createIcon(size) {
+            const svg = document.getElementById(`svg${size}`);
+            const scale = size / 128; // Base size is 128
+            
+            // Clear existing content
+            svg.innerHTML = '';
+            
+            // Create gradient definition
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            gradient.setAttribute('id', `gradient${size}`);
+            gradient.setAttribute('x1', '0%');
+            gradient.setAttribute('y1', '0%');
+            gradient.setAttribute('x2', '100%');
+            gradient.setAttribute('y2', '100%');
+            
+            const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop1.setAttribute('offset', '0%');
+            stop1.setAttribute('stop-color', '#667eea');
+            
+            const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop2.setAttribute('offset', '100%');
+            stop2.setAttribute('stop-color', '#764ba2');
+            
+            gradient.appendChild(stop1);
+            gradient.appendChild(stop2);
+            defs.appendChild(gradient);
+            svg.appendChild(defs);
+            
+            // Background rounded rectangle
+            const background = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            background.setAttribute('x', size * 0.1);
+            background.setAttribute('y', size * 0.1);
+            background.setAttribute('width', size * 0.8);
+            background.setAttribute('height', size * 0.8);
+            background.setAttribute('rx', size * 0.15);
+            background.setAttribute('fill', `url(#gradient${size})`);
+            svg.appendChild(background);
+            
+            // Book shadow
+            const bookShadow = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bookShadow.setAttribute('x', size * 0.25 + 2);
+            bookShadow.setAttribute('y', size * 0.35 + 2);
+            bookShadow.setAttribute('width', size * 0.5);
+            bookShadow.setAttribute('height', size * 0.3);
+            bookShadow.setAttribute('rx', size * 0.05);
+            bookShadow.setAttribute('fill', 'rgba(0,0,0,0.2)');
+            svg.appendChild(bookShadow);
+            
+            // Book cover
+            const bookCover = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bookCover.setAttribute('x', size * 0.25);
+            bookCover.setAttribute('y', size * 0.35);
+            bookCover.setAttribute('width', size * 0.5);
+            bookCover.setAttribute('height', size * 0.3);
+            bookCover.setAttribute('rx', size * 0.05);
+            bookCover.setAttribute('fill', '#ffffff');
+            svg.appendChild(bookCover);
+            
+            // Book pages
+            const bookPages = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bookPages.setAttribute('x', size * 0.27);
+            bookPages.setAttribute('y', size * 0.37);
+            bookPages.setAttribute('width', size * 0.46);
+            bookPages.setAttribute('height', size * 0.26);
+            bookPages.setAttribute('rx', size * 0.03);
+            bookPages.setAttribute('fill', '#f8f9fa');
+            svg.appendChild(bookPages);
+            
+            // Latin Cross (traditional Christian cross with longer vertical line)
+            const crossColor = '#667eea';
+            
+            // Vertical part of cross (longer)
+            const crossVertical = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            crossVertical.setAttribute('x', size * 0.46);
+            crossVertical.setAttribute('y', size * 0.38); // Start higher
+            crossVertical.setAttribute('width', size * 0.08);
+            crossVertical.setAttribute('height', size * 0.24); // Longer vertical line
+            crossVertical.setAttribute('fill', crossColor);
+            svg.appendChild(crossVertical);
+            
+            // Horizontal part of cross (shorter, positioned in upper third)
+            const crossHorizontal = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            crossHorizontal.setAttribute('x', size * 0.42);
+            crossHorizontal.setAttribute('y', size * 0.44); // Positioned in upper third
+            crossHorizontal.setAttribute('width', size * 0.16);
+            crossHorizontal.setAttribute('height', size * 0.08);
+            crossHorizontal.setAttribute('fill', crossColor);
+            svg.appendChild(crossHorizontal);
+            
+            // Text lines (fewer to make room for cross)
+            for (let i = 0; i < 2; i++) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                line.setAttribute('x', size * 0.33);
+                line.setAttribute('y', size * 0.52 + i * size * 0.06); // Positioned below cross
+                line.setAttribute('width', size * 0.34);
+                line.setAttribute('height', size * 0.02);
+                line.setAttribute('fill', '#dee2e6');
+                svg.appendChild(line);
+            }
+        }
+        
+        // Convert SVG to PNG and download
+        function downloadIcon(size) {
+            const svg = document.getElementById(`svg${size}`);
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            canvas.width = size;
+            canvas.height = size;
+            
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0);
+                const link = document.createElement('a');
+                link.download = `icon${size}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            };
+            
+            img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+        }
+        
+        // Download all icons
+        function downloadAllIcons() {
+            const sizes = [16, 32, 48, 128];
+            sizes.forEach((size, index) => {
+                setTimeout(() => downloadIcon(size), index * 500); // Delay between downloads
+            });
+        }
+        
+        // Initialize all icons
+        window.onload = function() {
+            const sizes = [16, 32, 48, 128];
+            sizes.forEach(size => {
+                createIcon(size);
+            });
+        };
+    </script>
+</body>
+</html> 

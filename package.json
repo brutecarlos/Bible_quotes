@@ -1,0 +1,96 @@
+{
+  "name": "bible-quotes-extension",
+  "version": "2.0.0",
+  "description": "A beautiful Chrome extension that provides daily Bible quotes and inspiration with modern features and design",
+  "main": "background.js",
+  "scripts": {
+    "build": "npm run clean && npm run copy && npm run minify",
+    "clean": "rm -rf dist",
+    "copy": "mkdir -p dist && cp -r *.js *.html *.css *.json dist/ && cp -r icons dist/ 2>/dev/null || true",
+    "minify": "echo 'Minification would be implemented here'",
+    "dev": "echo 'Development server would be implemented here'",
+    "test": "echo 'Tests would be implemented here'",
+    "lint": "echo 'Linting would be implemented here'",
+    "package": "npm run build && cd dist && zip -r ../bible-quotes-extension.zip .",
+    "watch": "echo 'File watching would be implemented here'"
+  },
+  "keywords": [
+    "chrome-extension",
+    "bible",
+    "quotes",
+    "inspiration",
+    "daily-quotes",
+    "scripture",
+    "chrome",
+    "extension",
+    "manifest-v3"
+  ],
+  "author": {
+    "name": "Bible Quotes Team",
+    "email": "support@biblequotes.com",
+    "url": "https://github.com/yourusername/bible-quotes-extension"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/bible-quotes-extension.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/bible-quotes-extension/issues"
+  },
+  "homepage": "https://github.com/yourusername/bible-quotes-extension#readme",
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "prettier": "^2.8.0",
+    "webpack": "^5.0.0",
+    "webpack-cli": "^5.0.0",
+    "terser-webpack-plugin": "^5.0.0",
+    "css-minimizer-webpack-plugin": "^5.0.0",
+    "copy-webpack-plugin": "^11.0.0"
+  },
+  "dependencies": {},
+  "browserslist": [
+    "Chrome >= 88",
+    "Edge >= 88"
+  ],
+  "manifest": {
+    "version": 3,
+    "permissions": [
+      "storage",
+      "notifications",
+      "clipboardWrite"
+    ],
+    "host_permissions": [
+      "https://www.google.com/*",
+      "https://www.bing.com/*",
+      "https://duckduckgo.com/*"
+    ]
+  },
+  "files": [
+    "manifest.json",
+    "popup.html",
+    "popup.js",
+    "content.js",
+    "background.js",
+    "options.html",
+    "options.js",
+    "styles.css",
+    "quotes.json",
+    "icons/*",
+    "README.md",
+    "LICENSE",
+    "Privacy Policy"
+  ],
+  "directories": {
+    "dist": "dist",
+    "src": ".",
+    "icons": "icons"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+} 

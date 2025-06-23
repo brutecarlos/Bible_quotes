@@ -1,34 +1,87 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Bible Quotes</title>
-    <style>
-      body {
-        width: 300px;
-        padding: 10px;
-      }
-      .quote {
-        font-size: 16px;
-        line-height: 1.5;
-        margin-bottom: 10px;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="quote" class="quote"></div>
-    <button id="newQuoteBtn">New Quote</button>
-    <div>
-      <label for="quoteCount">Number of quotes to display:</label>
-      <select id="quoteCount">
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-      </select>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bible Quotes</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header Section -->
+    <header class="header">
+      <h1>📖 Bible Quotes</h1>
+      <p>Daily inspiration from scripture</p>
+    </header>
+
+    <!-- Loading State -->
+    <div id="loading" class="loading" style="display: none;">
+      <div class="loading-spinner"></div>
+      <span>Loading quotes...</span>
     </div>
-    <div>
-      <label for="enableQuotes">Enable quote generation on searches:</label>
-      <input type="checkbox" id="enableQuotes">
+
+    <!-- Error State -->
+    <div id="error" class="error" style="display: none;">
+      <p>Could not load quotes. Please try again.</p>
     </div>
-    <script src="popup.js"></script>
-  </body>
+
+    <!-- Success Message -->
+    <div id="success" class="success" style="display: none;">
+      <p>Settings saved successfully!</p>
+    </div>
+
+    <!-- Quote Display Section -->
+    <main class="quote-container">
+      <div id="quote"></div>
+    </main>
+
+    <!-- Controls Section -->
+    <section class="controls">
+      <div class="control-group">
+        <label for="quoteCount" class="control-label">Number of quotes to display:</label>
+        <select id="quoteCount" aria-label="Select number of quotes">
+          <option value="1">1 quote</option>
+          <option value="2">2 quotes</option>
+          <option value="3">3 quotes</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <div class="checkbox-wrapper">
+          <input type="checkbox" id="enableQuotes" aria-label="Enable quotes on Google searches">
+          <label for="enableQuotes" class="control-label">Show quotes on Google searches</label>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div class="checkbox-wrapper">
+          <input type="checkbox" id="enableFavorites" aria-label="Enable favorites feature">
+          <label for="enableFavorites" class="control-label">Enable favorites feature</label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Action Buttons -->
+    <section class="actions">
+      <button id="newQuoteBtn" class="btn" aria-label="Get new quote">
+        🔄 New Quote
+      </button>
+      
+      <button id="favoriteBtn" class="btn btn-secondary" aria-label="Add to favorites" style="display: none;">
+        ⭐ Add to Favorites
+      </button>
+      
+      <button id="shareBtn" class="btn btn-secondary" aria-label="Share quote">
+        📤 Share Quote
+      </button>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Version 2.0.0</p>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
 </html>
