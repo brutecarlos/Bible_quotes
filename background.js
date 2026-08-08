@@ -3,10 +3,19 @@
  * Enhanced service worker with better error handling and performance
  */
 
+// Load utility modules using service worker importScripts
+// Files must be specified with proper path
+importScripts(
+  'constants.js',
+  'utils.js',
+  'storageHelper.js',
+  'preferencesManager.js'
+);
+
 class BibleQuotesBackground {
   constructor() {
     this.isInitialized = false;
-    this.quotesCache = null;
+    this.preferencesManager = PreferencesManager.getInstance();
     this.init();
   }
 
@@ -15,6 +24,7 @@ class BibleQuotesBackground {
    */
   async init() {
     try {
+      await this.preferencesManager.init();
       await this.loadQuotesIntoStorage();
       this.setupEventListeners();
       this.isInitialized = true;
@@ -30,102 +40,29 @@ class BibleQuotesBackground {
   async loadQuotesIntoStorage() {
     try {
       // Check if quotes are already loaded
-      const existingQuotes = await this.getQuotesFromStorage();
+      const existingQuotes = await StorageHelper.getQuotes();
       if (existingQuotes && existingQuotes.length > 0) {
         console.log('Quotes already loaded in storage');
         return existingQuotes;
       }
 
       console.log('Loading quotes from JSON file...');
-      const response = await fetch(chrome.runtime.getURL('quotes.json'));
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch quotes.json: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      
-      if (!data.books || !Array.isArray(data.books)) {
-        throw new Error('Invalid quotes data structure');
-      }
+      const preferredLanguage = this.preferencesManager.get(STORAGE_KEYS.LANGUAGE, null);
+      const data = await StorageHelper.fetchQuotesFile(preferredLanguage);
 
       // Process and flatten quotes
-      const quotes = this.processQuotesData(data);
-      
+      const quotes = QuoteUtils.flattenQuotesData(data);
+
       // Store in Chrome storage
-      await this.storeQuotes(quotes);
-      
+      await StorageHelper.storeQuotes(quotes, preferredLanguage);
+
       console.log(`Successfully loaded ${quotes.length} quotes into storage`);
       return quotes;
-      
+
     } catch (error) {
       console.error('Error loading quotes:', error);
       throw error;
     }
-  }
-
-  /**
-   * Process the quotes data structure into a flat array
-   */
-  processQuotesData(data) {
-    const quotes = [];
-    
-    data.books.forEach(book => {
-      if (!book.chapters || !Array.isArray(book.chapters)) {
-        console.warn(`Invalid book structure for: ${book.name}`);
-        return;
-      }
-
-      book.chapters.forEach(chapter => {
-        if (!chapter.verses || !Array.isArray(chapter.verses)) {
-          console.warn(`Invalid chapter structure for: ${book.name} ${chapter.number}`);
-          return;
-        }
-
-        chapter.verses.forEach(verse => {
-          if (verse.text && verse.reference) {
-            quotes.push(`${verse.text} - ${verse.reference}`);
-          }
-        });
-      });
-    });
-
-    return quotes;
-  }
-
-  /**
-   * Store quotes in Chrome local storage
-   */
-  async storeQuotes(quotes) {
-    return new Promise((resolve, reject) => {
-      chrome.storage.local.set({ 
-        quotes: quotes,
-        lastUpdated: Date.now(),
-        version: '2.0.0'
-      }, () => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          this.quotesCache = quotes;
-          resolve();
-        }
-      });
-    });
-  }
-
-  /**
-   * Get quotes from Chrome storage
-   */
-  async getQuotesFromStorage() {
-    return new Promise((resolve, reject) => {
-      chrome.storage.local.get(['quotes', 'lastUpdated'], (result) => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve(result.quotes || []);
-        }
-      });
-    });
   }
 
   /**
@@ -135,7 +72,7 @@ class BibleQuotesBackground {
     // Handle extension installation
     chrome.runtime.onInstalled.addListener((details) => {
       console.log('Bible Quotes Extension installed/updated:', details.reason);
-      
+
       if (details.reason === 'install') {
         this.handleFirstInstall();
       } else if (details.reason === 'update') {
@@ -166,15 +103,14 @@ class BibleQuotesBackground {
    */
   async handleFirstInstall() {
     try {
-      // Set default preferences
-      await this.setDefaultPreferences();
-      
+      // Preferences already initialized by PreferencesManager
+
       // Show welcome notification
       this.showNotification(
-        'Bible Quotes Extension Installed!',
-        'Click the extension icon to get started with daily Bible quotes.'
+        NOTIFICATION_MESSAGES.INSTALLED.title,
+        NOTIFICATION_MESSAGES.INSTALLED.message
       );
-      
+
       console.log('First install completed successfully');
     } catch (error) {
       console.error('Error during first install:', error);
@@ -186,35 +122,19 @@ class BibleQuotesBackground {
    */
   async handleUpdate(previousVersion) {
     try {
-      console.log(`Updated from version ${previousVersion} to 2.0.0`);
-      
+      console.log(`Updated from version ${previousVersion} to ${EXTENSION_CONFIG.VERSION}`);
+
       // Reload quotes if needed
       await this.loadQuotesIntoStorage();
-      
+
       // Show update notification
       this.showNotification(
-        'Bible Quotes Extension Updated!',
-        'New features and improvements are now available.'
+        NOTIFICATION_MESSAGES.UPDATED.title,
+        NOTIFICATION_MESSAGES.UPDATED.message
       );
     } catch (error) {
       console.error('Error during update:', error);
     }
-  }
-
-  /**
-   * Set default user preferences
-   */
-  async setDefaultPreferences() {
-    return new Promise((resolve) => {
-      chrome.storage.sync.set({
-        quoteCount: 1,
-        enableQuotes: true,
-        enableFavorites: false,
-        favorites: [],
-        theme: 'auto',
-        notifications: true
-      }, resolve);
-    });
   }
 
   /**
@@ -223,21 +143,26 @@ class BibleQuotesBackground {
   async handleMessage(request, sender, sendResponse) {
     try {
       switch (request.action) {
-        case 'getQuotes':
-          const quotes = await this.getQuotesFromStorage();
+        case MESSAGE_ACTIONS.GET_QUOTES:
+          const quotes = await StorageHelper.getQuotes();
           sendResponse({ success: true, quotes });
           break;
-          
-        case 'refreshQuotes':
+
+        case MESSAGE_ACTIONS.REFRESH_QUOTES:
           await this.loadQuotesIntoStorage();
           sendResponse({ success: true });
           break;
-          
-        case 'getStats':
+
+        case MESSAGE_ACTIONS.GET_STATS:
           const stats = await this.getExtensionStats();
           sendResponse({ success: true, stats });
           break;
-          
+
+        case MESSAGE_ACTIONS.GET_PREFERENCES:
+          const preferences = this.preferencesManager.getAll();
+          sendResponse({ success: true, preferences });
+          break;
+
         default:
           sendResponse({ success: false, error: 'Unknown action' });
       }
@@ -251,9 +176,8 @@ class BibleQuotesBackground {
    * Handle storage changes
    */
   handleStorageChanges(changes, namespace) {
-    if (namespace === 'local' && changes.quotes) {
+    if (namespace === 'local' && changes[STORAGE_KEYS.QUOTES]) {
       console.log('Quotes updated in storage');
-      this.quotesCache = changes.quotes.newValue;
     }
   }
 
@@ -262,9 +186,9 @@ class BibleQuotesBackground {
    */
   async getExtensionStats() {
     try {
-      const quotes = await this.getQuotesFromStorage();
-      const preferences = await this.getUserPreferences();
-      
+      const quotes = await StorageHelper.getQuotes();
+      const preferences = this.preferencesManager.getAll();
+
       return {
         totalQuotes: quotes.length,
         userPreferences: preferences,
@@ -277,33 +201,18 @@ class BibleQuotesBackground {
   }
 
   /**
-   * Get user preferences
-   */
-  async getUserPreferences() {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get({
-        quoteCount: 1,
-        enableQuotes: true,
-        enableFavorites: false
-      }, resolve);
-    });
-  }
-
-  /**
    * Show notification to user
    */
   showNotification(title, message) {
     // Check if notifications are enabled
-    chrome.storage.sync.get(['notifications'], (result) => {
-      if (result.notifications !== false) {
-        chrome.notifications.create({
-          type: 'basic',
-          iconUrl: 'icon48.png',
-          title: title,
-          message: message
-        });
-      }
-    });
+    if (this.preferencesManager.get(STORAGE_KEYS.ENABLE_NOTIFICATIONS, true)) {
+      chrome.notifications.create({
+        type: 'basic',
+        iconUrl: EXTENSION_CONFIG.NOTIFICATION_ICON,
+        title: title,
+        message: message
+      });
+    }
   }
 
   /**
@@ -311,11 +220,12 @@ class BibleQuotesBackground {
    */
   async cleanupOldData() {
     try {
-      const result = await chrome.storage.local.get(['lastUpdated']);
-      const lastUpdated = result.lastUpdated;
-      
-      // Clean up if data is older than 30 days
-      if (lastUpdated && (Date.now() - lastUpdated) > 30 * 24 * 60 * 60 * 1000) {
+      const result = await StorageHelper.getLocal(STORAGE_KEYS.LAST_UPDATED);
+      const lastUpdated = result[STORAGE_KEYS.LAST_UPDATED];
+
+      // Clean up if data is older than threshold days
+      const daysOld = QuoteUtils.daysBetween(lastUpdated);
+      if (daysOld > EXTENSION_CONFIG.CLEANUP_THRESHOLD_DAYS) {
         console.log('Cleaning up old data...');
         await this.loadQuotesIntoStorage();
       }
@@ -325,7 +235,7 @@ class BibleQuotesBackground {
   }
 }
 
-// Initialize the background script
+// Initialize the background script after all imports are loaded
 const bibleQuotesBackground = new BibleQuotesBackground();
 
 // Export for testing (if needed)

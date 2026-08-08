@@ -64,7 +64,7 @@ This extension uses the notifications permission to provide users with welcome m
 - ✅ Preferencias del usuario (Chrome Storage Sync)
 - ✅ Favoritos guardados (Chrome Storage Local)
 - ✅ Configuraciones de la extensión (Chrome Storage Local)
-- ✅ Datos de citas bíblicas (archivo local quotes.json)
+- ✅ Datos de citas bíblicas (archivos locales quotes_en.json y quotes_es.json)
 
 ### 🔒 Seguridad y Privacidad
 - **Datos locales**: Toda la información permanece en el dispositivo del usuario

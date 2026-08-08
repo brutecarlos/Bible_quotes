@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bible Quotes - Options</title>
+  <title data-i18n="options.pageTitle">Bible Quotes - Options</title>
   <link rel="stylesheet" href="styles.css">
   <style>
     /* Options page specific styles */
@@ -105,6 +105,17 @@
       gap: 15px;
       margin-top: 20px;
     }
+
+    .changelog-list {
+      margin: 12px 0 0;
+      padding-left: 20px;
+      color: #2c3e50;
+    }
+
+    .changelog-list li {
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
     
     .btn-small {
       padding: 8px 16px;
@@ -135,135 +146,166 @@
   <div class="options-container">
     <!-- Header -->
     <header class="options-header">
-      <h1>📖 Bible Quotes Settings</h1>
-      <p>Customize your Bible Quotes experience</p>
+        <h1 data-i18n="options.title">Settings</h1>
+      <p data-i18n="options.subtitle">Customize your Bible Quotes experience</p>
     </header>
 
     <!-- General Settings -->
     <section class="options-section">
-      <h2>General Settings</h2>
+      <h2 data-i18n="options.generalSettings">General Settings</h2>
       
       <div class="option-group">
-        <label for="defaultQuoteCount" class="option-label">Default Number of Quotes</label>
-        <div class="option-description">How many quotes to show by default when opening the extension</div>
+        <label for="defaultQuoteCount" class="option-label" data-i18n="options.defaultQuoteCountLabel">Default Number of Quotes</label>
+        <div class="option-description" data-i18n="options.defaultQuoteCountDescription">How many quotes to show by default when opening the extension</div>
         <select id="defaultQuoteCount" class="control-label">
-          <option value="1">1 quote</option>
-          <option value="2">2 quotes</option>
-          <option value="3">3 quotes</option>
+          <option value="1" data-i18n="options.quoteCountOne">1 quote</option>
+          <option value="2" data-i18n="options.quoteCountTwo">2 quotes</option>
+          <option value="3" data-i18n="options.quoteCountThree">3 quotes</option>
+        </select>
+      </div>
+
+      <div class="option-group">
+        <label for="quoteLanguage" class="option-label" data-i18n="options.quoteLanguageLabel">Quote Language</label>
+        <div class="option-description" data-i18n="options.quoteLanguageDescription">Choose which quote file language should be used for the extension.</div>
+        <select id="quoteLanguage" class="control-label">
+          <option value="en" data-i18n="options.languageEnglish">English</option>
+          <option value="es" data-i18n="options.languageSpanish">Spanish</option>
         </select>
       </div>
 
       <div class="option-group">
         <div class="checkbox-wrapper">
           <input type="checkbox" id="enableNotifications" class="control-label">
-          <label for="enableNotifications" class="option-label">Enable Notifications</label>
+          <label for="enableNotifications" class="option-label" data-i18n="options.enableNotifications">Enable Notifications</label>
         </div>
-        <div class="option-description">Show notifications for updates and new features</div>
+        <div class="option-description" data-i18n="options.enableNotificationsDescription">Show notifications for updates and new features</div>
       </div>
 
       <div class="option-group">
         <div class="checkbox-wrapper">
           <input type="checkbox" id="enableAutoRefresh" class="control-label">
-          <label for="enableAutoRefresh" class="option-label">Auto-refresh Quotes</label>
+          <label for="enableAutoRefresh" class="option-label" data-i18n="options.enableAutoRefresh">Auto-refresh Quotes</label>
         </div>
-        <div class="option-description">Automatically refresh quotes every hour</div>
+        <div class="option-description" data-i18n="options.enableAutoRefreshDescription">Automatically refresh quotes every hour</div>
       </div>
     </section>
 
     <!-- Search Engine Integration -->
     <section class="options-section">
-      <h2>Search Engine Integration</h2>
+      <h2 data-i18n="options.searchIntegration">Search Engine Integration</h2>
       
       <div class="option-group">
         <div class="checkbox-wrapper">
           <input type="checkbox" id="enableGoogleQuotes" class="control-label">
-          <label for="enableGoogleQuotes" class="option-label">Show quotes on Google</label>
+          <label for="enableGoogleQuotes" class="option-label" data-i18n="options.showQuotesGoogle">Show quotes on Google</label>
         </div>
-        <div class="option-description">Display Bible quotes on Google search results</div>
+        <div class="option-description" data-i18n="options.showQuotesGoogleDescription">Display Bible quotes on Google search results</div>
       </div>
 
       <div class="option-group">
         <div class="checkbox-wrapper">
           <input type="checkbox" id="enableBingQuotes" class="control-label">
-          <label for="enableBingQuotes" class="option-label">Show quotes on Bing</label>
+          <label for="enableBingQuotes" class="option-label" data-i18n="options.showQuotesBing">Show quotes on Bing</label>
         </div>
-        <div class="option-description">Display Bible quotes on Bing search results</div>
+        <div class="option-description" data-i18n="options.showQuotesBingDescription">Display Bible quotes on Bing search results</div>
       </div>
 
       <div class="option-group">
         <div class="checkbox-wrapper">
           <input type="checkbox" id="enableDuckDuckGoQuotes" class="control-label">
-          <label for="enableDuckDuckGoQuotes" class="option-label">Show quotes on DuckDuckGo</label>
+          <label for="enableDuckDuckGoQuotes" class="option-label" data-i18n="options.showQuotesDuckDuckGo">Show quotes on DuckDuckGo</label>
         </div>
-        <div class="option-description">Display Bible quotes on DuckDuckGo search results</div>
+        <div class="option-description" data-i18n="options.showQuotesDuckDuckGoDescription">Display Bible quotes on DuckDuckGo search results</div>
       </div>
     </section>
 
     <!-- Favorites Management -->
     <section class="options-section">
-      <h2>Favorites Management</h2>
+      <h2 data-i18n="options.favoritesManagement">Favorites Management</h2>
       
       <div class="option-group">
         <div class="checkbox-wrapper">
           <input type="checkbox" id="enableFavorites" class="control-label">
-          <label for="enableFavorites" class="option-label">Enable Favorites Feature</label>
+          <label for="enableFavorites" class="option-label" data-i18n="options.enableFavoritesFeature">Enable Favorites Feature</label>
         </div>
-        <div class="option-description">Allow saving and managing favorite quotes</div>
+        <div class="option-description" data-i18n="options.enableFavoritesFeatureDescription">Allow saving and managing favorite quotes</div>
       </div>
 
       <div class="button-group">
-        <button id="exportFavorites" class="btn btn-secondary btn-small">Export Favorites</button>
-        <button id="importFavorites" class="btn btn-secondary btn-small">Import Favorites</button>
-        <button id="clearFavorites" class="btn btn-secondary btn-small">Clear All Favorites</button>
+        <button id="exportFavorites" class="btn btn-secondary btn-small" data-i18n="options.exportFavorites">Export Favorites</button>
+        <button id="importFavorites" class="btn btn-secondary btn-small" data-i18n="options.importFavorites">Import Favorites</button>
+        <button id="clearFavorites" class="btn btn-secondary btn-small" data-i18n="options.clearFavorites">Clear All Favorites</button>
       </div>
     </section>
 
     <!-- Statistics -->
     <section class="options-section">
-      <h2>Extension Statistics</h2>
+      <h2 data-i18n="options.extensionStatistics">Extension Statistics</h2>
       
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-number" id="totalQuotes">-</div>
-          <div class="stat-label">Total Quotes</div>
+          <div class="stat-label" data-i18n="options.totalQuotes">Total Quotes</div>
         </div>
         <div class="stat-card">
           <div class="stat-number" id="favoriteCount">-</div>
-          <div class="stat-label">Favorite Quotes</div>
+          <div class="stat-label" data-i18n="options.favoriteQuotes">Favorite Quotes</div>
         </div>
         <div class="stat-card">
           <div class="stat-number" id="daysInstalled">-</div>
-          <div class="stat-label">Days Installed</div>
+          <div class="stat-label" data-i18n="options.daysInstalled">Days Installed</div>
         </div>
         <div class="stat-card">
           <div class="stat-number" id="version">2.0.0</div>
-          <div class="stat-label">Extension Version</div>
+          <div class="stat-label" data-i18n="options.extensionVersion">Extension Version</div>
         </div>
       </div>
     </section>
 
     <!-- Data Management -->
     <section class="options-section">
-      <h2>Data Management</h2>
+      <h2 data-i18n="options.dataManagement">Data Management</h2>
       
-      <div class="option-description">
+      <div class="option-description" data-i18n="options.dataManagementDescription">
         Manage your extension data and preferences
       </div>
       
       <div class="button-group">
-        <button id="exportData" class="btn btn-secondary btn-small">Export All Data</button>
-        <button id="importData" class="btn btn-secondary btn-small">Import Data</button>
-        <button id="resetData" class="btn btn-secondary btn-small">Reset to Defaults</button>
+        <button id="exportData" class="btn btn-secondary btn-small" data-i18n="options.exportData">Export All Data</button>
+        <button id="importData" class="btn btn-secondary btn-small" data-i18n="options.importData">Import Data</button>
+        <button id="resetData" class="btn btn-secondary btn-small" data-i18n="options.resetData">Reset to Defaults</button>
       </div>
+    </section>
+
+    <!-- Changelog -->
+    <section class="options-section">
+      <h2 data-i18n="options.changelogTitle">What's New in 3.0</h2>
+
+      <div class="option-description" data-i18n="options.changelogDescription">
+        Highlights from the latest major update.
+      </div>
+
+      <ul class="changelog-list">
+        <li data-i18n="options.changelogItem1">Full English and Spanish localization across the popup, options page, and injected search quotes.</li>
+        <li data-i18n="options.changelogItem2">Automatic language detection with saved language preference support for live menu updates.</li>
+        <li data-i18n="options.changelogItem3">New Spanish quote library plus language-aware quote caching for faster loading.</li>
+        <li data-i18n="options.changelogItem4">Improved favorites on search pages with inline star toggles, clearer actions, and first-time guidance.</li>
+        <li data-i18n="options.changelogItem5">Refactored shared architecture with centralized constants, storage helpers, preferences management, and i18n utilities.</li>
+      </ul>
     </section>
 
     <!-- Footer -->
     <footer class="footer">
-      <p>Bible Quotes Extension v2.0.0 • Made with ❤️ for daily inspiration</p>
-      <p><a href="#" id="privacyLink">Privacy Policy</a> • <a href="#" id="supportLink">Support</a></p>
+      <p data-i18n="options.footerTagline">Bible Quotes Extension v3.0.0 • Made with ❤️ for daily inspiration</p>
+      <p><a href="#" id="privacyLink" data-i18n="options.privacyPolicy">Privacy Policy</a> • <a href="#" id="supportLink" data-i18n="options.support">Support</a></p>
     </footer>
   </div>
 
+  <script src="constants.js"></script>
+  <script src="utils.js"></script>
+  <script src="storageHelper.js"></script>
+  <script src="preferencesManager.js"></script>
+  <script src="i18n.js"></script>
   <script src="options.js"></script>
 </body>
 </html> 

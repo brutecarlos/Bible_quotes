@@ -16,13 +16,15 @@ class BibleQuotesOptions {
   async init() {
     try {
       await this.loadPreferences();
+      await I18nHelper.init(this.preferences.language || 'en');
+      I18nHelper.translateDocument();
       await this.loadStatistics();
       this.setupEventListeners();
       this.updateUI();
       console.log('Bible Quotes Options page initialized');
     } catch (error) {
       console.error('Error initializing options page:', error);
-      this.showError('Failed to load options');
+      this.showError(I18nHelper.t('options.errorLoadPreferences'));
     }
   }
 
@@ -40,6 +42,7 @@ class BibleQuotesOptions {
         enableGoogleQuotes: true,
         enableBingQuotes: false,
         enableDuckDuckGoQuotes: false,
+        language: 'en',
         favorites: [],
         installDate: Date.now()
       }, (result) => {
@@ -109,6 +112,7 @@ class BibleQuotesOptions {
     document.getElementById('enableBingQuotes').checked = this.preferences.enableBingQuotes;
     document.getElementById('enableDuckDuckGoQuotes').checked = this.preferences.enableDuckDuckGoQuotes;
     document.getElementById('enableFavorites').checked = this.preferences.enableFavorites;
+    document.getElementById('quoteLanguage').value = this.preferences.language || 'en';
 
     // Update statistics
     document.getElementById('totalQuotes').textContent = this.stats.totalQuotes.toLocaleString();
@@ -158,6 +162,14 @@ class BibleQuotesOptions {
       this.savePreferences();
     });
 
+    document.getElementById('quoteLanguage').addEventListener('change', async (e) => {
+      this.preferences.language = e.target.value;
+      await this.savePreferences(false);
+      await I18nHelper.setLocale(this.preferences.language);
+      await StorageHelper.removeLocal([STORAGE_KEYS.QUOTES, STORAGE_KEYS.QUOTE_LANGUAGE]);
+      this.showSuccess(I18nHelper.t('options.notificationQuoteLanguageUpdated'));
+    });
+
     // Favorites management buttons
     document.getElementById('exportFavorites').addEventListener('click', () => {
       this.exportFavorites();
@@ -199,10 +211,12 @@ class BibleQuotesOptions {
   /**
    * Save preferences to Chrome storage
    */
-  async savePreferences() {
+  async savePreferences(showSuccessMessage = true) {
     return new Promise((resolve) => {
       chrome.storage.sync.set(this.preferences, () => {
-        this.showSuccess('Settings saved successfully!');
+        if (showSuccessMessage) {
+          this.showSuccess(I18nHelper.t('options.notificationSettingsSaved'));
+        }
         resolve();
       });
     });
@@ -224,10 +238,10 @@ class BibleQuotesOptions {
       link.click();
       
       URL.revokeObjectURL(url);
-      this.showSuccess('Favorites exported successfully!');
+      this.showSuccess(I18nHelper.t('options.notificationExportSuccess'));
     } catch (error) {
       console.error('Error exporting favorites:', error);
-      this.showError('Failed to export favorites');
+      this.showError(I18nHelper.t('options.errorExportFailed'));
     }
   }
 
@@ -252,16 +266,16 @@ class BibleQuotesOptions {
           await this.savePreferences();
           await this.loadStatistics();
           this.updateUI();
-          this.showSuccess(`Imported ${favorites.length} favorites!`);
+          this.showSuccess(I18nHelper.t('options.notificationImportSuccess'));
         } else {
-          this.showError('Invalid favorites file format');
+          this.showError(I18nHelper.t('options.errorInvalidFile'));
         }
       };
       
       input.click();
     } catch (error) {
       console.error('Error importing favorites:', error);
-      this.showError('Failed to import favorites');
+      this.showError(I18nHelper.t('options.errorImportFailed'));
     }
   }
 
@@ -269,12 +283,12 @@ class BibleQuotesOptions {
    * Clear all favorites
    */
   async clearFavorites() {
-    if (confirm('Are you sure you want to clear all favorites? This action cannot be undone.')) {
+    if (confirm(I18nHelper.t('options.confirmClearFavorites'))) {
       this.preferences.favorites = [];
       await this.savePreferences();
       await this.loadStatistics();
       this.updateUI();
-      this.showSuccess('All favorites cleared!');
+      this.showSuccess(I18nHelper.t('options.favoritesCleared'));
     }
   }
 
@@ -301,10 +315,10 @@ class BibleQuotesOptions {
       link.click();
       
       URL.revokeObjectURL(url);
-      this.showSuccess('All data exported successfully!');
+      this.showSuccess(I18nHelper.t('options.notificationDataExportSuccess'));
     } catch (error) {
       console.error('Error exporting data:', error);
-      this.showError('Failed to export data');
+      this.showError(I18nHelper.t('options.errorExportDataFailed'));
     }
   }
 
@@ -334,16 +348,16 @@ class BibleQuotesOptions {
           
           await this.loadStatistics();
           this.updateUI();
-          this.showSuccess('Data imported successfully!');
+          this.showSuccess(I18nHelper.t('options.notificationDataImportSuccess'));
         } else {
-          this.showError('Invalid backup file format');
+          this.showError(I18nHelper.t('options.errorInvalidFile'));
         }
       };
       
       input.click();
     } catch (error) {
       console.error('Error importing data:', error);
-      this.showError('Failed to import data');
+      this.showError(I18nHelper.t('options.errorImportDataFailed'));
     }
   }
 
@@ -366,7 +380,7 @@ class BibleQuotesOptions {
    * Reset all data to defaults
    */
   async resetToDefaults() {
-    if (confirm('Are you sure you want to reset all settings to defaults? This will clear all your preferences and favorites.')) {
+    if (confirm(I18nHelper.t('options.confirmReset'))) {
       try {
         // Reset preferences
         this.preferences = {
@@ -385,10 +399,10 @@ class BibleQuotesOptions {
         await this.savePreferences();
         await this.loadStatistics();
         this.updateUI();
-        this.showSuccess('Settings reset to defaults!');
+        this.showSuccess(I18nHelper.t('options.notificationResetSuccess'));
       } catch (error) {
         console.error('Error resetting data:', error);
-        this.showError('Failed to reset settings');
+        this.showError(I18nHelper.t('options.errorResetFailed'));
       }
     }
   }
@@ -486,4 +500,4 @@ style.textContent = `
     }
   }
 `;
-document.head.appendChild(style); 
+document.head.appendChild(style);

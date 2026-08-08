@@ -6,8 +6,9 @@
 class BibleQuotesContent {
   constructor() {
     this.quotes = [];
-    this.preferences = {};
+    this.preferencesManager = PreferencesManager.getInstance();
     this.isInitialized = false;
+    this.unsubscribePreferences = null;
     this.init();
   }
 
@@ -16,77 +17,57 @@ class BibleQuotesContent {
    */
   async init() {
     try {
-      await this.loadPreferences();
-      if (this.preferences.enableQuotes) {
+      await this.preferencesManager.init();
+      await I18nHelper.init(this.preferencesManager.get(STORAGE_KEYS.LANGUAGE, 'en'));
+      
+      if (this.preferencesManager.get(STORAGE_KEYS.ENABLE_QUOTES)) {
         await this.loadQuotes();
         this.injectQuotes();
       }
+      
       this.isInitialized = true;
+      this.setupPreferenceListener();
     } catch (error) {
       console.error('Bible Quotes Content Script initialization error:', error);
     }
   }
 
   /**
-   * Load user preferences from Chrome storage
-   */
-  async loadPreferences() {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get({
-        quoteCount: 1,
-        enableQuotes: true
-      }, (result) => {
-        this.preferences = result;
-        resolve(result);
-      });
-    });
-  }
-
-  /**
    * Load quotes from Chrome storage
    */
   async loadQuotes() {
-    return new Promise((resolve, reject) => {
-      chrome.storage.local.get('quotes', (result) => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          this.quotes = result.quotes || [];
-          resolve(this.quotes);
-        }
-      });
-    });
+    try {
+      const preferredLanguage = this.preferencesManager.get(STORAGE_KEYS.LANGUAGE, 'en');
+      const stored = await StorageHelper.getLocal([STORAGE_KEYS.QUOTES, STORAGE_KEYS.QUOTE_LANGUAGE]);
+      const savedQuotes = stored[STORAGE_KEYS.QUOTES] || [];
+      const savedLanguage = stored[STORAGE_KEYS.QUOTE_LANGUAGE] || null;
+
+      if (savedQuotes.length === 0 || savedLanguage !== preferredLanguage) {
+        const data = await StorageHelper.fetchQuotesFile(preferredLanguage);
+        this.quotes = QuoteUtils.flattenQuotesData(data);
+        await StorageHelper.storeQuotes(this.quotes, preferredLanguage);
+      } else {
+        this.quotes = savedQuotes;
+      }
+    } catch (error) {
+      console.error('Error loading quotes:', error);
+      this.quotes = [];
+    }
   }
 
   /**
    * Get random quotes from the loaded data
    */
   getRandomQuotes(count = 1) {
-    if (!this.quotes || this.quotes.length === 0) {
-      return ['No quotes available - John 3:16'];
-    }
-
-    const randomQuotes = [];
-    const usedIndices = new Set();
-    
-    for (let i = 0; i < Math.min(count, this.quotes.length); i++) {
-      let randomIndex;
-      do {
-        randomIndex = Math.floor(Math.random() * this.quotes.length);
-      } while (usedIndices.has(randomIndex));
-      
-      usedIndices.add(randomIndex);
-      randomQuotes.push(this.quotes[randomIndex]);
-    }
-
-    return randomQuotes;
+    return QuoteUtils.getRandomQuotes(this.quotes, count);
   }
 
   /**
    * Create and inject quotes into the Google search page
    */
   injectQuotes() {
-    const quotes = this.getRandomQuotes(this.preferences.quoteCount);
+    const count = this.preferencesManager.get(STORAGE_KEYS.QUOTE_COUNT, 1);
+    const quotes = this.getRandomQuotes(count);
     const quotesContainer = this.createQuotesContainer(quotes);
     
     // Find the best insertion point
@@ -103,17 +84,7 @@ class BibleQuotesContent {
    * Find the best place to insert quotes on Google search results
    */
   findInsertionPoint() {
-    // Try multiple selectors for different Google layouts
-    const selectors = [
-      '#search',
-      '#main',
-      '#center_col',
-      '.main',
-      '[data-ved]',
-      '.g'
-    ];
-
-    for (const selector of selectors) {
+    for (const selector of EXTENSION_CONFIG.CONTENT_SCRIPT_SELECTORS) {
       const element = document.querySelector(selector);
       if (element) {
         return element;
@@ -137,8 +108,8 @@ class BibleQuotesContent {
     header.className = 'bible-quotes-header';
     header.innerHTML = `
       <span class="bible-quotes-icon">📖</span>
-      <span class="bible-quotes-title">Daily Bible Quote</span>
-      <button class="bible-quotes-close" aria-label="Close quotes">×</button>
+      <span class="bible-quotes-title">${I18nHelper.t('content.headerTitle')}</span>
+      <button class="bible-quotes-close" aria-label="${I18nHelper.t('content.closeButton')}">×</button>
     `;
     container.appendChild(header);
 
@@ -169,7 +140,7 @@ class BibleQuotesContent {
     const quoteDiv = document.createElement('div');
     quoteDiv.className = 'bible-quote-item';
     
-    const [text, reference] = quoteString.split(' - ');
+    const { text, reference } = QuoteUtils.parseQuote(quoteString);
     
     const textElement = document.createElement('div');
     textElement.className = 'bible-quote-text';
@@ -181,8 +152,98 @@ class BibleQuotesContent {
     
     quoteDiv.appendChild(textElement);
     quoteDiv.appendChild(referenceElement);
-    
+
+      const actionRow = document.createElement('div');
+      actionRow.className = 'bible-quote-actions';
+
+    // Always include favorites controls (inline star + action button)
+    // Inline star (always visible) for quick favoriting
+    const inlineStar = document.createElement('button');
+    inlineStar.type = 'button';
+    inlineStar.className = 'bible-quote-favorite-inline';
+    inlineStar.setAttribute('aria-label', I18nHelper.t('content.favoriteAriaLabel'));
+    inlineStar.textContent = '☆';
+    inlineStar.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await this.addQuoteToFavorites(quoteString, inlineStar);
+    });
+    referenceElement.appendChild(inlineStar);
+
+      const favoriteButton = document.createElement('button');
+      favoriteButton.type = 'button';
+      favoriteButton.className = 'bible-quote-favorite-button';
+      favoriteButton.textContent = I18nHelper.t('content.favorite');
+
+      const currentFavorites = this.preferencesManager.get(STORAGE_KEYS.FAVORITES, []) || [];
+      const isFav = QuoteUtils.isInFavorites(quoteString, currentFavorites);
+      inlineStar.textContent = isFav ? '★' : '☆';
+      favoriteButton.textContent = isFav ? I18nHelper.t('content.unfavorite') : I18nHelper.t('content.favorite');
+
+      favoriteButton.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await this.addQuoteToFavorites(quoteString, favoriteButton);
+      });
+
+      actionRow.appendChild(favoriteButton);
+      quoteDiv.appendChild(actionRow);
+
     return quoteDiv;
+  }
+
+  /**
+   * Add a quote to the favorites list
+   */
+  async addQuoteToFavorites(quoteString, button) {
+    try {
+      const currentFavorites = this.preferencesManager.get(STORAGE_KEYS.FAVORITES, []) || [];
+      const isFav = QuoteUtils.isInFavorites(quoteString, currentFavorites);
+
+      let updatedFavorites;
+      if (isFav) {
+        // remove
+        updatedFavorites = currentFavorites.filter(q => q !== quoteString);
+      } else {
+        // add
+        updatedFavorites = [...currentFavorites, quoteString];
+      }
+
+      await this.preferencesManager.set(STORAGE_KEYS.FAVORITES, updatedFavorites);
+
+      // Update UI for both inline star and action button within the same quote item
+      const quoteItem = button.closest('.bible-quote-item');
+      if (quoteItem) {
+        const inline = quoteItem.querySelector('.bible-quote-favorite-inline');
+        const actionBtn = quoteItem.querySelector('.bible-quote-favorite-button');
+
+        if (isFav) {
+          if (inline) inline.textContent = '☆';
+          if (actionBtn) actionBtn.textContent = I18nHelper.t('content.favorite');
+          this.showInlineMessage(button, I18nHelper.t('content.removedFromFavorites'));
+        } else {
+          if (inline) inline.textContent = '★';
+          if (actionBtn) actionBtn.textContent = I18nHelper.t('content.unfavorite');
+          this.showInlineMessage(button, I18nHelper.t('content.addedToFavorites'));
+        }
+      }
+
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      this.showInlineMessage(button, I18nHelper.t('content.favoriteUpdateFailed'));
+    }
+  }
+
+  /**
+   * Show a temporary inline message next to a button
+   */
+  showInlineMessage(targetButton, message) {
+    const messageEl = document.createElement('span');
+    messageEl.className = 'bible-quote-inline-message';
+    messageEl.textContent = message;
+    targetButton.insertAdjacentElement('afterend', messageEl);
+
+    setTimeout(() => {
+      messageEl.remove();
+    }, 2500);
   }
 
   /**
@@ -253,12 +314,13 @@ class BibleQuotesContent {
 
       .bible-quote-item {
         margin-bottom: 15px;
-        padding: 15px;
-        background: rgba(255, 255, 255, 0.95);
+        padding: 18px 16px 18px 16px;
+        background: rgba(255, 255, 255, 0.98);
         border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-        border-left: 4px solid #667eea;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        transition: all 0.25s ease;
+        border-left: 6px solid #4b6ef6;
+        position: relative;
       }
 
       .bible-quote-item:hover {
@@ -284,6 +346,90 @@ class BibleQuotesContent {
         color: #667eea;
         text-align: right;
         font-style: normal;
+      }
+
+      .bible-quote-actions {
+        margin-top: 12px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      .bible-quote-favorite-button {
+        background: linear-gradient(90deg,#ffd93d,#ffb347);
+        border: none;
+        color: #1f2d3d;
+        padding: 10px 16px;
+        border-radius: 999px;
+        font-weight: 800;
+        font-size: 14px;
+        cursor: pointer;
+        box-shadow: 0 6px 18px rgba(255,189,60,0.18);
+        transition: transform 0.12s ease, box-shadow 0.12s ease;
+      }
+
+      .bible-quote-favorite-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 28px rgba(255,189,60,0.22);
+      }
+
+      .bible-quote-favorite-button:disabled {
+        background: #cfd8dc;
+        color: #55606a;
+        cursor: default;
+        box-shadow: none;
+      }
+
+      /* Inline star badge positioned top-right for immediate visibility */
+      .bible-quote-favorite-inline {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: #ff9f1c;
+        border: 2px solid rgba(255,159,28,0.12);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      }
+
+      .bible-quote-inline-message {
+        margin-left: 12px;
+        color: #ffffff;
+        background: rgba(0, 0, 0, 0.65);
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        align-self: center;
+      }
+
+      .bible-quote-tooltip {
+        position: absolute;
+        top: 48px;
+        right: 12px;
+        background: rgba(0,0,0,0.85);
+        color: #fff;
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        z-index: 10001;
+        max-width: 220px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+      }
+      .bible-quote-inline-message {
+        margin-left: 12px;
+        color: #ffffff;
+        background: rgba(0, 0, 0, 0.65);
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        align-self: center;
       }
 
       /* Dark mode support */
@@ -339,19 +485,52 @@ class BibleQuotesContent {
     `;
 
     document.head.appendChild(styleElement);
+    // Show tooltip for first-time users (once per browser install)
+    try {
+      const shown = localStorage.getItem('bible_quotes_fav_tooltip_shown');
+      if (!shown) {
+        // create a transient tooltip near the first injected quote
+        setTimeout(() => {
+          const container = document.getElementById('bible-quotes-container');
+          if (!container) return;
+          const firstItem = container.querySelector('.bible-quote-item');
+          if (!firstItem) return;
+          const tooltip = document.createElement('div');
+          tooltip.className = 'bible-quote-tooltip';
+          tooltip.textContent = I18nHelper.t('content.tooltipFavorite');
+          firstItem.appendChild(tooltip);
+          setTimeout(() => tooltip.remove(), 6000);
+          try { localStorage.setItem('bible_quotes_fav_tooltip_shown', '1'); } catch(e) {}
+        }, 800);
+      }
+    } catch (e) {
+      // ignore storage errors
+    }
   }
 
   /**
    * Listen for preference changes
    */
   setupPreferenceListener() {
-    chrome.storage.onChanged.addListener((changes, namespace) => {
-      if (namespace === 'sync' && changes.enableQuotes) {
-        const newValue = changes.enableQuotes.newValue;
-        if (newValue) {
-          this.init();
+    // Subscribe to preference changes
+    this.unsubscribePreferences = this.preferencesManager.subscribe(async (key, value) => {
+      if (key === STORAGE_KEYS.ENABLE_QUOTES) {
+        if (value) {
+          await this.loadQuotes();
+          this.removeQuotes();
+          this.injectQuotes();
         } else {
           this.removeQuotes();
+        }
+      }
+
+      if (key === STORAGE_KEYS.LANGUAGE) {
+        await I18nHelper.setLocale(value);
+
+        if (this.preferencesManager.get(STORAGE_KEYS.ENABLE_QUOTES)) {
+          await this.loadQuotes();
+          this.removeQuotes();
+          this.injectQuotes();
         }
       }
     });
@@ -366,10 +545,22 @@ class BibleQuotesContent {
       container.remove();
     }
   }
+
+  /**
+   * Cleanup - called when script unloads
+   */
+  cleanup() {
+    if (this.unsubscribePreferences) {
+      this.unsubscribePreferences();
+    }
+    this.removeQuotes();
+  }
 }
 
 // Initialize the content script
 const bibleQuotes = new BibleQuotesContent();
 
-// Setup preference listener
-bibleQuotes.setupPreferenceListener();
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+  bibleQuotes.cleanup();
+});
