@@ -127,6 +127,8 @@
   "options.insightFavoritesPerDay": "Favoritos por día",
   "options.insightTopFavorited": "Más favorito",
   "options.insightTopShared": "Más compartido",
+  "options.enableLocalAnalytics": "Habilitar analítica local",
+  "options.enableLocalAnalyticsDescription": "Almacena eventos de uso localmente para generar estadísticas. Puedes desactivarlo en cualquier momento.",
   "options.theme.hope": "Esperanza",
   "options.theme.love": "Amor",
   "options.theme.faith": "Fe",

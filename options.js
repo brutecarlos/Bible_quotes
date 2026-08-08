@@ -47,6 +47,7 @@ class BibleQuotesOptions {
         enableGoogleQuotes: true,
         enableBingQuotes: false,
         enableDuckDuckGoQuotes: false,
+        enableLocalAnalytics: true,
         language: 'en',
         favorites: [],
         favoritesLastSync: null,
@@ -383,6 +384,8 @@ class BibleQuotesOptions {
     document.getElementById('enableDuckDuckGoQuotes').checked = this.preferences.enableDuckDuckGoQuotes;
     document.getElementById('enableFavorites').checked = this.preferences.enableFavorites;
     document.getElementById('quoteLanguage').value = this.preferences.language || 'en';
+    const analyticsChk = document.getElementById('enableLocalAnalytics');
+    if (analyticsChk) analyticsChk.checked = (this.preferences.enableLocalAnalytics !== false);
 
     // Update statistics
     document.getElementById('totalQuotes').textContent = this.stats.totalQuotes.toLocaleString();
@@ -449,6 +452,15 @@ class BibleQuotesOptions {
       this.preferences.enableFavorites = e.target.checked;
       this.savePreferences();
     });
+
+    const analyticsEl = document.getElementById('enableLocalAnalytics');
+    if (analyticsEl) {
+      analyticsEl.addEventListener('change', (e) => {
+        this.preferences.enableLocalAnalytics = e.target.checked;
+        // persist to sync storage
+        chrome.storage.sync.set({ enableLocalAnalytics: e.target.checked }, () => {});
+      });
+    }
 
     document.getElementById('quoteLanguage').addEventListener('change', async (e) => {
       this.preferences.language = e.target.value;
