@@ -120,6 +120,11 @@ class BibleQuotesContent {
     quotes.forEach(quote => {
       const quoteElement = this.createQuoteElement(quote);
       quotesList.appendChild(quoteElement);
+      // Analytics: log show event for injected quote
+      try {
+        const parsed = QuoteUtils.parseQuote(quote);
+        StorageHelper.pushAnalyticsEvent({ type: 'show', quote: parsed.text, reference: parsed.reference });
+      } catch (e) { /* ignore analytics errors */ }
     });
     
     container.appendChild(quotesList);
@@ -153,11 +158,7 @@ class BibleQuotesContent {
     quoteDiv.appendChild(textElement);
     quoteDiv.appendChild(referenceElement);
 
-      const actionRow = document.createElement('div');
-      actionRow.className = 'bible-quote-actions';
-
-    // Always include favorites controls (inline star + action button)
-    // Inline star (always visible) for quick favoriting
+    // Keep a single favorites control (inline star) for quick favoriting
     const inlineStar = document.createElement('button');
     inlineStar.type = 'button';
     inlineStar.className = 'bible-quote-favorite-inline';
@@ -169,23 +170,9 @@ class BibleQuotesContent {
     });
     referenceElement.appendChild(inlineStar);
 
-      const favoriteButton = document.createElement('button');
-      favoriteButton.type = 'button';
-      favoriteButton.className = 'bible-quote-favorite-button';
-      favoriteButton.textContent = I18nHelper.t('content.favorite');
-
       const currentFavorites = this.preferencesManager.get(STORAGE_KEYS.FAVORITES, []) || [];
       const isFav = QuoteUtils.isInFavorites(quoteString, currentFavorites);
       inlineStar.textContent = isFav ? '★' : '☆';
-      favoriteButton.textContent = isFav ? I18nHelper.t('content.unfavorite') : I18nHelper.t('content.favorite');
-
-      favoriteButton.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        await this.addQuoteToFavorites(quoteString, favoriteButton);
-      });
-
-      actionRow.appendChild(favoriteButton);
-      quoteDiv.appendChild(actionRow);
 
     return quoteDiv;
   }
@@ -209,20 +196,19 @@ class BibleQuotesContent {
 
       await this.preferencesManager.set(STORAGE_KEYS.FAVORITES, updatedFavorites);
 
-      // Update UI for both inline star and action button within the same quote item
+      // Update UI for inline star within the same quote item
       const quoteItem = button.closest('.bible-quote-item');
       if (quoteItem) {
         const inline = quoteItem.querySelector('.bible-quote-favorite-inline');
-        const actionBtn = quoteItem.querySelector('.bible-quote-favorite-button');
 
         if (isFav) {
           if (inline) inline.textContent = '☆';
-          if (actionBtn) actionBtn.textContent = I18nHelper.t('content.favorite');
           this.showInlineMessage(button, I18nHelper.t('content.removedFromFavorites'));
+          try { StorageHelper.pushAnalyticsEvent({ type: 'unfav', quote: quoteString }); } catch (e) {}
         } else {
           if (inline) inline.textContent = '★';
-          if (actionBtn) actionBtn.textContent = I18nHelper.t('content.unfavorite');
           this.showInlineMessage(button, I18nHelper.t('content.addedToFavorites'));
+          try { StorageHelper.pushAnalyticsEvent({ type: 'fav', quote: quoteString }); } catch (e) {}
         }
       }
 
@@ -314,7 +300,7 @@ class BibleQuotesContent {
 
       .bible-quote-item {
         margin-bottom: 15px;
-        padding: 18px 16px 18px 16px;
+        padding: 18px 56px 18px 16px;
         background: rgba(255, 255, 255, 0.98);
         border-radius: 8px;
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);

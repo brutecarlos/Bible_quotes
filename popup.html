@@ -32,11 +32,88 @@
       justify-content: space-between;
       margin-bottom: 8px;
     }
+    .favorites-header-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
     .favorites-list { list-style: none; padding: 0; margin: 0; }
     .favorites-item { padding: 8px; border-bottom: 1px solid #eee; display:flex; gap:8px; align-items:flex-start }
     .favorites-text { flex: 1; font-size: 13px; color: #222 }
     .favorites-actions { display:flex; gap:6px }
     .btn-small { padding:6px 8px; border-radius:8px; border:none; cursor:pointer }
+
+    .quote-of-day {
+      margin: 8px 0 12px;
+      padding: 10px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #f5f7ff 0%, #eef2ff 100%);
+      border: 1px solid rgba(102,126,234,0.25);
+    }
+
+    .quote-of-day-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #4c5fd4;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .quote-of-day-text {
+      font-size: 13px;
+      color: #2d3748;
+      line-height: 1.45;
+      margin-bottom: 6px;
+    }
+
+    .quote-of-day-reference {
+      font-size: 12px;
+      font-weight: 600;
+      color: #667eea;
+      text-align: right;
+    }
+
+    .search-controls {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .search-controls input,
+    .search-controls select {
+      border: 1px solid #dbe1ff;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 13px;
+    }
+
+    .search-results {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 260px;
+      overflow: auto;
+    }
+
+    .search-item {
+      border-bottom: 1px solid #edf0ff;
+      padding: 8px 4px;
+    }
+
+    .search-item-actions {
+      margin-top: 6px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .search-empty {
+      font-size: 12px;
+      color: #718096;
+      text-align: center;
+      padding: 12px 6px;
+    }
   </style>
 </head>
 <body>
@@ -65,6 +142,11 @@
 
     <!-- Quote Display Section -->
     <main class="quote-container">
+      <section id="quoteOfDay" class="quote-of-day" style="display:none;">
+        <div class="quote-of-day-title" data-i18n="popup.quoteOfDayTitle">Quote of the Day</div>
+        <div id="quoteOfDayText" class="quote-of-day-text"></div>
+        <div id="quoteOfDayReference" class="quote-of-day-reference"></div>
+      </section>
       <div id="quote"></div>
     </main>
 
@@ -107,22 +189,22 @@
       <button id="newQuoteBtn" class="btn" data-i18n-attr="aria-label" data-i18n="popup.newQuote">
         🔄 New Quote
       </button>
-      <button id="viewFavoritesBtn" class="btn btn-secondary" data-i18n-attr="aria-label" data-i18n="popup.viewFavorites">
-        ⭐ View Favorites
-      </button>
-      
-      <button id="favoriteBtn" class="btn btn-secondary" aria-label="Add to favorites" style="display: none;" data-i18n-attr="aria-label" data-i18n="popup.addToFavorites">
-        ⭐ Add to Favorites
+      <button id="favoritesBtn" class="btn btn-secondary" data-i18n-attr="aria-label" data-i18n="popup.favorites">
+        ⭐ Favorites
       </button>
       
       <button id="shareBtn" class="btn btn-secondary" data-i18n-attr="aria-label" data-i18n="popup.shareQuote">
         📤 Share Quote
       </button>
+
+      <button id="searchQuotesBtn" class="btn btn-secondary" data-i18n="popup.searchQuotes">
+        🔍 Search Quotes
+      </button>
     </section>
 
     <!-- Footer -->
     <footer class="footer">
-      <p data-i18n="popup.version">Version 2.0.0</p>
+      <p data-i18n="popup.version">Version 3.0.0</p>
     </footer>
   </div>
 
@@ -131,10 +213,31 @@
       <div class="favorites-modal" role="dialog" aria-modal="true">
         <div class="favorites-header">
           <strong data-i18n="popup.yourFavorites">Your Favorites</strong>
-          <button id="favoritesCloseBtn" class="btn-small" data-i18n="popup.close">Close</button>
+          <div class="favorites-header-actions">
+            <button id="addCurrentToFavoritesBtn" class="btn-small" data-i18n="popup.addCurrentQuote">Add Current Quote</button>
+            <button id="favoritesCloseBtn" class="btn-small" data-i18n="popup.close">Close</button>
+          </div>
         </div>
         <ul id="favoritesList" class="favorites-list"></ul>
         <div style="margin-top:8px;text-align:right;"><button id="favoritesClearBtn" class="btn-small" data-i18n="popup.favoritesClearAll">Clear All</button></div>
+      </div>
+    </div>
+
+    <!-- Search Modal -->
+    <div id="searchModal" class="favorites-modal-backdrop" style="display:none;">
+      <div class="favorites-modal" role="dialog" aria-modal="true">
+        <div class="favorites-header">
+          <strong data-i18n="popup.searchQuotes">Search Quotes</strong>
+          <button id="searchCloseBtn" class="btn-small" data-i18n="popup.close">Close</button>
+        </div>
+
+        <div class="search-controls">
+          <input id="quoteSearchInput" type="text" placeholder="Search text or verse" data-i18n="popup.searchPlaceholder" data-i18n-attr="placeholder">
+          <select id="bookFilterSelect"></select>
+          <select id="themeFilterSelect"></select>
+        </div>
+
+        <ul id="searchResultsList" class="search-results"></ul>
       </div>
     </div>
 

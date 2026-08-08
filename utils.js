@@ -4,6 +4,17 @@
  */
 
 class QuoteUtils {
+  static THEME_KEYWORDS = {
+    hope: ['hope', 'trust', 'promesa', 'esperanza', 'esperar'],
+    love: ['love', 'loved', 'amor', 'amar', 'caridad'],
+    faith: ['faith', 'believe', 'fe', 'creer', 'fidelidad'],
+    peace: ['peace', 'rest', 'paz', 'reposo', 'calma'],
+    wisdom: ['wisdom', 'understanding', 'sabiduría', 'entendimiento', 'prudencia'],
+    strength: ['strength', 'strong', 'fortaleza', 'fuerte', 'ánimo'],
+    grace: ['grace', 'mercy', 'gracia', 'misericordia', 'perdón'],
+    salvation: ['salvation', 'saved', 'salvación', 'salvo', 'redención']
+  };
+
   /**
    * Get random quotes from a flat array
    * @param {string[]} quotes - Array of quote strings
@@ -43,6 +54,105 @@ class QuoteUtils {
       text: parts[0] || '',
       reference: parts[1] || 'Unknown'
     };
+  }
+
+  /**
+   * Get deterministic quote of the day based on date
+   * @param {string[]} quotes - Array of quote strings
+   * @param {Date} date - Date used to derive deterministic index
+   * @returns {string} Quote string for the day
+   */
+  static getQuoteOfTheDay(quotes, date = new Date()) {
+    if (!Array.isArray(quotes) || quotes.length === 0) {
+      return 'No quotes available - John 3:16';
+    }
+
+    const dayKey = date.toISOString().slice(0, 10);
+    let hash = 0;
+
+    for (let i = 0; i < dayKey.length; i++) {
+      hash = ((hash << 5) - hash) + dayKey.charCodeAt(i);
+      hash |= 0;
+    }
+
+    const index = Math.abs(hash) % quotes.length;
+    return quotes[index];
+  }
+
+  /**
+   * Extract book name from verse reference
+   * @param {string} reference - Verse reference (e.g. "John 3:16")
+   * @returns {string}
+   */
+  static extractBookName(reference = '') {
+    if (!reference || typeof reference !== 'string') {
+      return 'Unknown';
+    }
+
+    const cleaned = reference.trim();
+    const match = cleaned.match(/^([1-3]?\s*[\p{L}]+(?:\s+[\p{L}]+)*)\s+\d+/u);
+    if (match && match[1]) {
+      return match[1].replace(/\s+/g, ' ').trim();
+    }
+
+    return cleaned.split(' ')[0] || 'Unknown';
+  }
+
+  /**
+   * Detect matching themes for a quote text
+   * @param {string} text - Quote text
+   * @returns {string[]} Matched theme keys
+   */
+  static detectThemes(text = '') {
+    const normalized = (text || '').toLowerCase();
+    const matches = [];
+
+    Object.entries(this.THEME_KEYWORDS).forEach(([theme, keywords]) => {
+      if (keywords.some(keyword => normalized.includes(keyword))) {
+        matches.push(theme);
+      }
+    });
+
+    return matches;
+  }
+
+  /**
+   * Filter quotes by free text, book, and theme
+   * @param {string[]} quotes - All quote strings
+   * @param {Object} filters - Filter options
+   * @returns {string[]} Filtered quote strings
+   */
+  static filterQuotes(quotes, filters = {}) {
+    if (!Array.isArray(quotes)) {
+      return [];
+    }
+
+    const query = (filters.query || '').trim().toLowerCase();
+    const selectedBook = (filters.book || '').trim().toLowerCase();
+    const selectedTheme = (filters.theme || '').trim().toLowerCase();
+
+    return quotes.filter((quoteString) => {
+      const parsed = this.parseQuote(quoteString);
+      const book = this.extractBookName(parsed.reference).toLowerCase();
+      const themes = this.detectThemes(parsed.text);
+
+      if (query) {
+        const target = `${parsed.text} ${parsed.reference}`.toLowerCase();
+        if (!target.includes(query)) {
+          return false;
+        }
+      }
+
+      if (selectedBook && selectedBook !== 'all' && book !== selectedBook) {
+        return false;
+      }
+
+      if (selectedTheme && selectedTheme !== 'all' && !themes.includes(selectedTheme)) {
+        return false;
+      }
+
+      return true;
+    });
   }
 
   /**

@@ -1,6 +1,6 @@
 {
   "name": "bible-quotes-extension",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "A beautiful Chrome extension that provides daily Bible quotes and inspiration with modern features and design",
   "main": "background.js",
   "scripts": {

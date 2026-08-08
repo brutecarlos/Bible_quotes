@@ -2,7 +2,7 @@
 
 A beautiful Chrome extension that provides daily Bible quotes and inspiration. Features include favorites management, sharing capabilities, and beautiful quote displays on search engines.
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)
 ![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Available-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-yellow.svg)
 

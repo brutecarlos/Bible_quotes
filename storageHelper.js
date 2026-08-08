@@ -175,4 +175,65 @@ class StorageHelper {
       return fallbackResponse.json();
     }
   }
+
+  /**
+   * Push an analytics event into local storage (if enabled).
+   * Event example: { type: 'show'|'fav'|'share', quoteId, book, verse, meta: {}, ts }
+   * @param {Object} event
+   */
+  static async pushAnalyticsEvent(event = {}) {
+    try {
+      const prefs = await this.getSync([STORAGE_KEYS.ENABLE_LOCAL_ANALYTICS]);
+      if (prefs[STORAGE_KEYS.ENABLE_LOCAL_ANALYTICS] === false) {
+        return;
+      }
+
+      const now = Date.now();
+      const e = Object.assign({}, event, { ts: event.ts || now });
+
+      const existing = await this.getLocal([ANALYTICS_CONFIG.EVENTS_KEY]);
+      const events = existing[ANALYTICS_CONFIG.EVENTS_KEY] || [];
+      events.push(e);
+
+      // Trim by retention and max size
+      const trimmed = this._trimEventsArray(events);
+
+      await this.setLocal({ [ANALYTICS_CONFIG.EVENTS_KEY]: trimmed });
+    } catch (err) {
+      console.error('Failed to push analytics event', err);
+    }
+  }
+
+  /**
+   * Retrieve analytics events from local storage
+   * @returns {Promise<Array>} events
+   */
+  static async getAnalyticsEvents() {
+    try {
+      const result = await this.getLocal([ANALYTICS_CONFIG.EVENTS_KEY]);
+      return result[ANALYTICS_CONFIG.EVENTS_KEY] || [];
+    } catch (err) {
+      console.error('Failed to get analytics events', err);
+      return [];
+    }
+  }
+
+  /**
+   * Internal helper to trim events by retention and max count
+   * @param {Array} events
+   * @returns {Array} trimmed events
+   */
+  static _trimEventsArray(events = []) {
+    const now = Date.now();
+    const retentionMs = ANALYTICS_CONFIG.RETENTION_DAYS * 24 * 60 * 60 * 1000;
+
+    // Remove old events
+    let filtered = events.filter(e => (now - (e.ts || 0)) <= retentionMs);
+
+    // Keep only the most recent ANALYTICS_CONFIG.MAX_EVENTS
+    if (filtered.length > ANALYTICS_CONFIG.MAX_EVENTS) {
+      filtered = filtered.slice(filtered.length - ANALYTICS_CONFIG.MAX_EVENTS);
+    }
+    return filtered;
+  }
 }

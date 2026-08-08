@@ -24,15 +24,25 @@ class BibleQuotesPopup {
       successElement: document.getElementById('success'),
       quoteCountInput: document.getElementById('quoteCount'),
       quoteLanguageSelect: document.getElementById('quoteLanguage'),
-      viewFavoritesBtn: document.getElementById('viewFavoritesBtn'),
+      favoritesBtn: document.getElementById('favoritesBtn'),
       favoritesModal: document.getElementById('favoritesModal'),
       favoritesList: document.getElementById('favoritesList'),
       favoritesCloseBtn: document.getElementById('favoritesCloseBtn'),
       favoritesClearBtn: document.getElementById('favoritesClearBtn'),
+      addCurrentToFavoritesBtn: document.getElementById('addCurrentToFavoritesBtn'),
+      searchModal: document.getElementById('searchModal'),
+      searchCloseBtn: document.getElementById('searchCloseBtn'),
+      searchQuotesBtn: document.getElementById('searchQuotesBtn'),
+      quoteSearchInput: document.getElementById('quoteSearchInput'),
+      bookFilterSelect: document.getElementById('bookFilterSelect'),
+      themeFilterSelect: document.getElementById('themeFilterSelect'),
+      searchResultsList: document.getElementById('searchResultsList'),
+      quoteOfDayCard: document.getElementById('quoteOfDay'),
+      quoteOfDayText: document.getElementById('quoteOfDayText'),
+      quoteOfDayReference: document.getElementById('quoteOfDayReference'),
       enableQuotesCheckbox: document.getElementById('enableQuotes'),
       enableFavoritesCheckbox: document.getElementById('enableFavorites'),
       newQuoteBtn: document.getElementById('newQuoteBtn'),
-      favoriteBtn: document.getElementById('favoriteBtn'),
       shareBtn: document.getElementById('shareBtn')
     };
   }
@@ -77,6 +87,9 @@ class BibleQuotesPopup {
       } else {
         this.quotes = savedQuotes;
       }
+
+      this.renderQuoteOfDay();
+      this.populateSearchFilters();
       
       this.showLoading(false);
     } catch (error) {
@@ -101,7 +114,7 @@ class BibleQuotesPopup {
     this.cachedElements.enableFavoritesCheckbox.checked = enableFavorites;
     
     // Show/hide favorites button based on preference
-    this.cachedElements.favoriteBtn.style.display = enableFavorites ? 'block' : 'none';
+    this.cachedElements.favoritesBtn.style.display = enableFavorites ? 'block' : 'none';
   }
 
   /**
@@ -110,7 +123,7 @@ class BibleQuotesPopup {
   setupPreferenceListeners() {
     this.preferencesManager.subscribe((key, value) => {
       if (key === STORAGE_KEYS.ENABLE_FAVORITES) {
-        this.cachedElements.favoriteBtn.style.display = value ? 'block' : 'none';
+        this.cachedElements.favoritesBtn.style.display = value ? 'block' : 'none';
       }
       if (key === STORAGE_KEYS.FAVORITES) {
         // If modal is open, refresh the list
@@ -142,10 +155,172 @@ class BibleQuotesPopup {
       const quote = QuoteUtils.parseQuote(quoteString);
       const quoteElement = this.createQuoteElement(quote, index);
       quoteContainer.appendChild(quoteElement);
+      // Log show event for analytics
+      try {
+        StorageHelper.pushAnalyticsEvent({ type: 'show', quote: quote.text, reference: quote.reference });
+      } catch (e) {
+        console.warn('Analytics show event failed', e);
+      }
     });
 
     // Update favorites button state
     this.updateFavoritesButton();
+  }
+
+  /**
+   * Render deterministic quote of the day
+   */
+  renderQuoteOfDay() {
+    const quoteOfDay = QuoteUtils.getQuoteOfTheDay(this.quotes);
+    const parsed = QuoteUtils.parseQuote(quoteOfDay);
+
+    if (!this.cachedElements.quoteOfDayCard || !this.cachedElements.quoteOfDayText || !this.cachedElements.quoteOfDayReference) {
+      return;
+    }
+
+    this.cachedElements.quoteOfDayText.textContent = parsed.text;
+    this.cachedElements.quoteOfDayReference.textContent = parsed.reference;
+    this.cachedElements.quoteOfDayCard.style.display = 'block';
+  }
+
+  /**
+   * Populate search filter dropdowns
+   */
+  populateSearchFilters() {
+    const bookSelect = this.cachedElements.bookFilterSelect;
+    const themeSelect = this.cachedElements.themeFilterSelect;
+
+    if (!bookSelect || !themeSelect) {
+      return;
+    }
+
+    const books = Array.from(new Set(
+      this.quotes.map((quoteString) => QuoteUtils.extractBookName(QuoteUtils.parseQuote(quoteString).reference))
+    )).sort((a, b) => a.localeCompare(b));
+
+    bookSelect.innerHTML = '';
+    const allBooksOption = document.createElement('option');
+    allBooksOption.value = 'all';
+    allBooksOption.textContent = I18nHelper.t('popup.filterAllBooks');
+    bookSelect.appendChild(allBooksOption);
+
+    books.forEach((bookName) => {
+      const option = document.createElement('option');
+      option.value = bookName.toLowerCase();
+      option.textContent = bookName;
+      bookSelect.appendChild(option);
+    });
+
+    const themeOptions = [
+      ['all', I18nHelper.t('popup.filterAllThemes')],
+      ['hope', I18nHelper.t('popup.themeHope')],
+      ['love', I18nHelper.t('popup.themeLove')],
+      ['faith', I18nHelper.t('popup.themeFaith')],
+      ['peace', I18nHelper.t('popup.themePeace')],
+      ['wisdom', I18nHelper.t('popup.themeWisdom')],
+      ['strength', I18nHelper.t('popup.themeStrength')],
+      ['grace', I18nHelper.t('popup.themeGrace')],
+      ['salvation', I18nHelper.t('popup.themeSalvation')]
+    ];
+
+    themeSelect.innerHTML = '';
+    themeOptions.forEach(([value, label]) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      themeSelect.appendChild(option);
+    });
+
+    this.performQuoteSearch();
+  }
+
+  /**
+   * Filter and render searchable quote results
+   */
+  performQuoteSearch() {
+    const query = this.cachedElements.quoteSearchInput?.value || '';
+    const book = this.cachedElements.bookFilterSelect?.value || 'all';
+    const theme = this.cachedElements.themeFilterSelect?.value || 'all';
+
+    const filtered = QuoteUtils.filterQuotes(this.quotes, { query, book, theme }).slice(0, 40);
+    this.renderSearchResults(filtered);
+  }
+
+  /**
+   * Render search result list
+   */
+  renderSearchResults(results) {
+    const listEl = this.cachedElements.searchResultsList;
+    if (!listEl) return;
+
+    listEl.innerHTML = '';
+
+    if (!results.length) {
+      const empty = document.createElement('li');
+      empty.className = 'search-empty';
+      empty.textContent = I18nHelper.t('popup.searchNoResults');
+      listEl.appendChild(empty);
+      return;
+    }
+
+    results.forEach((quoteString) => {
+      const parsed = QuoteUtils.parseQuote(quoteString);
+      const li = document.createElement('li');
+      li.className = 'search-item';
+
+      const text = document.createElement('div');
+      text.className = 'favorites-text';
+      text.textContent = `${parsed.text} - ${parsed.reference}`;
+
+      const actionWrap = document.createElement('div');
+      actionWrap.className = 'search-item-actions';
+
+      const addBtn = document.createElement('button');
+      addBtn.className = 'btn-small';
+      addBtn.textContent = I18nHelper.t('popup.addToFavoritesMini');
+      addBtn.addEventListener('click', async () => {
+        await this.addQuoteStringToFavorites(quoteString);
+      });
+
+      actionWrap.appendChild(addBtn);
+      li.appendChild(text);
+      li.appendChild(actionWrap);
+      listEl.appendChild(li);
+    });
+  }
+
+  /**
+   * Add a specific quote string to favorites
+   */
+  async addQuoteStringToFavorites(quoteString) {
+    const currentFavorites = this.preferencesManager.get(STORAGE_KEYS.FAVORITES, []) || [];
+    if (currentFavorites.includes(quoteString)) {
+      this.showSuccess(I18nHelper.t('popup.inFavorites'));
+      return;
+    }
+
+    const updated = [...currentFavorites, quoteString];
+    await this.preferencesManager.set(STORAGE_KEYS.FAVORITES, updated);
+    this.showSuccess(I18nHelper.t('popup.notificationAddedToFavorites'));
+    this.updateFavoritesButton();
+    try {
+      await StorageHelper.pushAnalyticsEvent({ type: 'fav', quote: quoteString });
+    } catch (e) {
+      console.warn('Analytics fav event failed', e);
+    }
+  }
+
+  showSearch() {
+    const modal = this.cachedElements.searchModal;
+    if (!modal) return;
+    modal.style.display = 'flex';
+    this.performQuoteSearch();
+  }
+
+  closeSearch() {
+    const modal = this.cachedElements.searchModal;
+    if (!modal) return;
+    modal.style.display = 'none';
   }
 
   /**
@@ -264,6 +439,12 @@ class BibleQuotesPopup {
       await this.preferencesManager.set(STORAGE_KEYS.FAVORITES, newFavorites);
       this.showSuccess(I18nHelper.t('popup.notificationAddedToFavorites'));
       this.updateFavoritesButton();
+      // Analytics: favorite events for each newly added quote
+      try {
+        this.currentQuotes.forEach(qs => StorageHelper.pushAnalyticsEvent({ type: 'fav', quote: qs }));
+      } catch (e) {
+        console.warn('Analytics fav event failed', e);
+      }
     } catch (error) {
       console.error('Error adding to favorites:', error);
       this.showError(I18nHelper.t('popup.errorStorage'));
@@ -274,7 +455,7 @@ class BibleQuotesPopup {
    * Update favorites button state
    */
   updateFavoritesButton() {
-    const favoriteBtn = this.cachedElements.favoriteBtn;
+    const favoritesBtn = this.cachedElements.favoritesBtn;
     if (!this.preferencesManager.get(STORAGE_KEYS.ENABLE_FAVORITES)) return;
 
     const currentFavorites = this.preferencesManager.get(STORAGE_KEYS.FAVORITES, []) || [];
@@ -284,11 +465,11 @@ class BibleQuotesPopup {
     );
 
     if (allInFavorites) {
-      favoriteBtn.textContent = I18nHelper.t('popup.inFavorites');
-      favoriteBtn.disabled = true;
+      favoritesBtn.textContent = I18nHelper.t('popup.inFavorites');
+      favoritesBtn.disabled = false;
     } else {
-      favoriteBtn.textContent = I18nHelper.t('popup.addToFavorites');
-      favoriteBtn.disabled = false;
+      favoritesBtn.textContent = I18nHelper.t('popup.favorites');
+      favoritesBtn.disabled = false;
     }
   }
 
@@ -310,10 +491,13 @@ class BibleQuotesPopup {
           text: quoteText,
           url: 'https://chrome.google.com/webstore/detail/bible-quotes'
         });
+        // Analytics: share event
+        try { StorageHelper.pushAnalyticsEvent({ type: 'share', quote: quoteText }); } catch (e) { }
       } else {
         // Fallback: copy to clipboard
         await navigator.clipboard.writeText(quoteText);
         this.showSuccess(I18nHelper.t('popup.notificationQuoteCopied'));
+        try { StorageHelper.pushAnalyticsEvent({ type: 'share', quote: quoteText }); } catch (e) { }
       }
     } catch (error) {
       console.error('Error sharing quote:', error);
@@ -355,12 +539,8 @@ class BibleQuotesPopup {
       await I18nHelper.setLocale(this.cachedElements.quoteLanguageSelect.value);
       await this.loadQuotes();
       this.displayQuotes();
+      this.performQuoteSearch();
       this.showSuccess(I18nHelper.t('popup.notificationSettingsSaved'));
-    });
-
-    // Favorite button
-    this.cachedElements.favoriteBtn.addEventListener('click', async () => {
-      await this.addToFavorites();
     });
 
     // Share button
@@ -368,11 +548,35 @@ class BibleQuotesPopup {
       await this.shareQuote();
     });
 
-    // View Favorites button
-    if (this.cachedElements.viewFavoritesBtn) {
-      this.cachedElements.viewFavoritesBtn.addEventListener('click', () => {
+    // Favorites button
+    if (this.cachedElements.favoritesBtn) {
+      this.cachedElements.favoritesBtn.addEventListener('click', () => {
         this.showFavorites();
       });
+    }
+
+    if (this.cachedElements.searchQuotesBtn) {
+      this.cachedElements.searchQuotesBtn.addEventListener('click', () => {
+        this.showSearch();
+      });
+    }
+
+    if (this.cachedElements.searchCloseBtn) {
+      this.cachedElements.searchCloseBtn.addEventListener('click', () => this.closeSearch());
+    }
+
+    if (this.cachedElements.quoteSearchInput) {
+      this.cachedElements.quoteSearchInput.addEventListener('input', QuoteUtils.debounce(() => {
+        this.performQuoteSearch();
+      }, 180));
+    }
+
+    if (this.cachedElements.bookFilterSelect) {
+      this.cachedElements.bookFilterSelect.addEventListener('change', () => this.performQuoteSearch());
+    }
+
+    if (this.cachedElements.themeFilterSelect) {
+      this.cachedElements.themeFilterSelect.addEventListener('change', () => this.performQuoteSearch());
     }
 
     // Keyboard shortcuts
@@ -385,6 +589,13 @@ class BibleQuotesPopup {
     // Favorites modal close / clear handlers
     if (this.cachedElements.favoritesCloseBtn) {
       this.cachedElements.favoritesCloseBtn.addEventListener('click', () => this.closeFavorites());
+    }
+
+    if (this.cachedElements.addCurrentToFavoritesBtn) {
+      this.cachedElements.addCurrentToFavoritesBtn.addEventListener('click', async () => {
+        await this.addToFavorites();
+        this.renderFavoritesList();
+      });
     }
 
     if (this.cachedElements.favoritesClearBtn) {
@@ -454,6 +665,7 @@ class BibleQuotesPopup {
             await navigator.clipboard.writeText(quote);
             this.showSuccess(I18nHelper.t('popup.notificationQuoteCopied'));
           }
+          try { await StorageHelper.pushAnalyticsEvent({ type: 'share', quote }); } catch (e) { }
         } catch (e) {
           console.error('Share failed', e);
         }
@@ -484,6 +696,7 @@ class BibleQuotesPopup {
     const current = this.preferencesManager.get(STORAGE_KEYS.FAVORITES, []) || [];
     const updated = current.filter(q => q !== quoteValue);
     await this.preferencesManager.set(STORAGE_KEYS.FAVORITES, updated);
+    try { await StorageHelper.pushAnalyticsEvent({ type: 'unfav', quote: quoteValue }); } catch (e) { }
   }
 }
 

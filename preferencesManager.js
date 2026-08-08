@@ -58,8 +58,20 @@ class PreferencesManager {
    */
   async set(key, value) {
     this.preferences[key] = value;
-    await StorageHelper.setSync({ [key]: value });
+    const payload = { [key]: value };
+
+    if (key === STORAGE_KEYS.FAVORITES) {
+      const syncAt = Date.now();
+      payload[STORAGE_KEYS.FAVORITES_LAST_SYNC] = syncAt;
+      this.preferences[STORAGE_KEYS.FAVORITES_LAST_SYNC] = syncAt;
+    }
+
+    await StorageHelper.setSync(payload);
     this.notifyListeners(key, value);
+
+    if (key === STORAGE_KEYS.FAVORITES) {
+      this.notifyListeners(STORAGE_KEYS.FAVORITES_LAST_SYNC, this.preferences[STORAGE_KEYS.FAVORITES_LAST_SYNC]);
+    }
   }
 
   /**
@@ -68,9 +80,16 @@ class PreferencesManager {
    * @returns {Promise<void>}
    */
   async setMultiple(updates) {
-    Object.assign(this.preferences, updates);
-    await StorageHelper.setSync(updates);
-    Object.entries(updates).forEach(([key, value]) => {
+    const payload = { ...updates };
+
+    if (Object.prototype.hasOwnProperty.call(updates, STORAGE_KEYS.FAVORITES)) {
+      const syncAt = Date.now();
+      payload[STORAGE_KEYS.FAVORITES_LAST_SYNC] = syncAt;
+    }
+
+    Object.assign(this.preferences, payload);
+    await StorageHelper.setSync(payload);
+    Object.entries(payload).forEach(([key, value]) => {
       this.notifyListeners(key, value);
     });
   }

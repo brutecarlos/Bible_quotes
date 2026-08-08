@@ -116,6 +116,35 @@
       margin-bottom: 10px;
       line-height: 1.5;
     }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .status-chip {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #eef2ff;
+      color: #4c5fd4;
+    }
+
+    .insights-list {
+      margin: 8px 0 0;
+      padding-left: 20px;
+      color: #2c3e50;
+    }
+
+    .insights-list li {
+      margin-bottom: 8px;
+      line-height: 1.45;
+    }
     
     .btn-small {
       padding: 8px 16px;
@@ -256,10 +285,53 @@
           <div class="stat-label" data-i18n="options.daysInstalled">Days Installed</div>
         </div>
         <div class="stat-card">
-          <div class="stat-number" id="version">2.0.0</div>
+          <div class="stat-number" id="version">3.0.0</div>
           <div class="stat-label" data-i18n="options.extensionVersion">Extension Version</div>
         </div>
       </div>
+    </section>
+
+    <!-- Cloud Sync -->
+    <section class="options-section">
+      <h2 data-i18n="options.cloudSyncTitle">Cloud Sync</h2>
+
+      <div class="option-description" data-i18n="options.cloudSyncDescription">
+        Favorites are synced through your signed-in Chrome profile.
+      </div>
+
+      <div class="status-row">
+        <span id="cloudSyncStatus" class="status-chip" data-i18n="options.cloudSyncStatusIdle">Status: Ready</span>
+        <button id="syncFavoritesNow" class="btn btn-secondary btn-small" data-i18n="options.syncNow">Sync Favorites Now</button>
+      </div>
+
+      <div id="cloudSyncLast" class="option-description" style="margin-top:10px;"></div>
+    </section>
+
+    <!-- Analytics Dashboard -->
+    <section class="options-section">
+      <h2 data-i18n="options.analyticsTitle">Analytics Dashboard</h2>
+      <div class="option-description" data-i18n="options.analyticsDescription">Insights based on your saved favorites and usage.</div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number" id="favoriteRatio">0%</div>
+          <div class="stat-label" data-i18n="options.favoriteRatio">Favorite Ratio</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="topBook">-</div>
+          <div class="stat-label" data-i18n="options.topBook">Top Book</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="topTheme">-</div>
+          <div class="stat-label" data-i18n="options.topTheme">Top Theme</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="favoritesPerDay">0.0</div>
+          <div class="stat-label" data-i18n="options.favoritesPerDay">Favorites / Day</div>
+        </div>
+      </div>
+
+      <ul id="analyticsInsights" class="insights-list"></ul>
     </section>
 
     <!-- Data Management -->
@@ -279,18 +351,18 @@
 
     <!-- Changelog -->
     <section class="options-section">
-      <h2 data-i18n="options.changelogTitle">What's New in 3.0</h2>
+      <h2 data-i18n="options.changelogTitle">What's New in 3.0.0</h2>
 
       <div class="option-description" data-i18n="options.changelogDescription">
-        Highlights from the latest major update.
+        This release focuses on smarter discovery, cross-device continuity, and deeper insights.
       </div>
 
       <ul class="changelog-list">
-        <li data-i18n="options.changelogItem1">Full English and Spanish localization across the popup, options page, and injected search quotes.</li>
-        <li data-i18n="options.changelogItem2">Automatic language detection with saved language preference support for live menu updates.</li>
-        <li data-i18n="options.changelogItem3">New Spanish quote library plus language-aware quote caching for faster loading.</li>
-        <li data-i18n="options.changelogItem4">Improved favorites on search pages with inline star toggles, clearer actions, and first-time guidance.</li>
-        <li data-i18n="options.changelogItem5">Refactored shared architecture with centralized constants, storage helpers, preferences management, and i18n utilities.</li>
+        <li data-i18n="options.changelogItem1">Advanced quote search and filtering by text, Bible book, and theme.</li>
+        <li data-i18n="options.changelogItem2">Quote of the Day panel with a daily featured verse.</li>
+        <li data-i18n="options.changelogItem3">Cloud sync improvements for favorites, including last-sync status.</li>
+        <li data-i18n="options.changelogItem4">Enhanced analytics dashboard with top book, top theme, ratio, and per-day insights.</li>
+        <li data-i18n="options.changelogItem5">Refined favorites UX in search pages and modular internal architecture updates.</li>
       </ul>
     </section>
 

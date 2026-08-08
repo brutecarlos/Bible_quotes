@@ -1,6 +1,6 @@
 # Chrome Web Store Description for Bible Quotes Extension
 
-## Short Description (132 characters max)
+## Short Description
 📖 Daily Bible quotes with beautiful design, favorites, sharing & search integration.
 
 ## Full Description
@@ -130,29 +130,27 @@ Whether you're a student, professional, parent, or anyone seeking daily spiritua
 ## 🔮 Future Roadmap
 
 **Coming Soon:**
-- 🔍 Advanced quote search and filtering by book or theme
-- 📅 Quote of the Day feature with daily featured verses
-- ☁️ Cloud sync for favorites across all your devices
-- 📊 Enhanced analytics dashboard with insights
+- 🎨 Additional visual themes and typography presets
+- 🔔 Optional reminder notifications for daily reflection
+- 🧩 More search integrations and context-aware quote placement
+- 🌍 Additional language packs and translation improvements
 - 🧪 Unit tests and automated quality assurance
 
 ---
 
-## Version 2.0 Highlights
+## Version 3.0.0 Highlights
 
 **This release includes:**
-- Complete code refactor with modern ES6+ architecture
-- 4 new utility modules for better code organization
-- PreferencesManager singleton for state management
-- StorageHelper for simplified Chrome API usage
-- QuoteUtils for shared functionality
-- Constants module eliminating magic strings
-- Performance improvements and optimizations
-- Enhanced error handling and logging
-- Better TypeScript-ready code structure
+- 🔍 Advanced quote search with filters by text, Bible book, and theme
+- 📅 Quote of the Day panel with a daily featured verse
+- ☁️ Cloud sync enhancements for favorites across signed-in devices
+- 📊 Enhanced analytics dashboard with top book, top theme, and favorites/day insights
+- 🌐 Full bilingual experience (English/Spanish) across popup, options, and search injection UI
+- ⭐ Improved favorites UX on search pages with cleaner single-action controls
+- 🧱 Modular architecture improvements for maintainability and scalability
 
 **Performance:**
-- 40% faster quote loading with optimized caching
+- Faster language-aware quote loading with optimized caching
 - Reduced memory usage through proper cleanup
 - Non-blocking operations throughout
 - Efficient data structures and algorithms

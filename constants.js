@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   LAST_UPDATED: 'lastUpdated',
   VERSION: 'version',
   FAVORITES: 'favorites',
+  FAVORITES_LAST_SYNC: 'favoritesLastSync',
   QUOTE_COUNT: 'quoteCount',
   ENABLE_QUOTES: 'enableQuotes',
   ENABLE_FAVORITES: 'enableFavorites',
@@ -20,6 +21,8 @@ const STORAGE_KEYS = {
   LANGUAGE: 'language',
   QUOTE_LANGUAGE: 'quoteLanguage',
   THEME: 'theme'
+  ,
+  ENABLE_LOCAL_ANALYTICS: 'enableLocalAnalytics'
 };
 
 const DEFAULT_PREFERENCES = {
@@ -32,13 +35,16 @@ const DEFAULT_PREFERENCES = {
   [STORAGE_KEYS.ENABLE_BING_QUOTES]: false,
   [STORAGE_KEYS.ENABLE_DUCKDUCKGO_QUOTES]: false,
   [STORAGE_KEYS.FAVORITES]: [],
+  [STORAGE_KEYS.FAVORITES_LAST_SYNC]: null,
   [STORAGE_KEYS.INSTALL_DATE]: Date.now(),
   [STORAGE_KEYS.LANGUAGE]: 'en',
   [STORAGE_KEYS.THEME]: 'auto'
+  ,
+  [STORAGE_KEYS.ENABLE_LOCAL_ANALYTICS]: true
 };
 
 const EXTENSION_CONFIG = {
-  VERSION: '2.0.0',
+  VERSION: '3.0.0',
   NOTIFICATION_ICON: 'icons/icon48.png',
   POPUP_WIDTH: 350,
   POPUP_MIN_HEIGHT: 400,
@@ -57,6 +63,13 @@ const EXTENSION_CONFIG = {
     '[data-ved]',
     '.g'
   ]
+};
+
+// Analytics configuration
+const ANALYTICS_CONFIG = {
+  EVENTS_KEY: 'analytics_events',
+  MAX_EVENTS: 1000,
+  RETENTION_DAYS: 90
 };
 
 const MESSAGE_ACTIONS = {

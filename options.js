@@ -7,6 +7,10 @@ class BibleQuotesOptions {
   constructor() {
     this.preferences = {};
     this.stats = {};
+    this.cloudSync = {
+      status: 'idle',
+      lastSync: null
+    };
     this.init();
   }
 
@@ -19,6 +23,7 @@ class BibleQuotesOptions {
       await I18nHelper.init(this.preferences.language || 'en');
       I18nHelper.translateDocument();
       await this.loadStatistics();
+      await this.loadCloudSyncStatus();
       this.setupEventListeners();
       this.updateUI();
       console.log('Bible Quotes Options page initialized');
@@ -44,6 +49,7 @@ class BibleQuotesOptions {
         enableDuckDuckGoQuotes: false,
         language: 'en',
         favorites: [],
+        favoritesLastSync: null,
         installDate: Date.now()
       }, (result) => {
         this.preferences = result;
@@ -72,16 +78,280 @@ class BibleQuotesOptions {
         totalQuotes,
         favoritesCount,
         daysInstalled,
-        version: '2.0.0'
+        favoriteRatio: totalQuotes > 0 ? (favoritesCount / totalQuotes) * 100 : 0,
+        topBook: this.getTopBook(this.preferences.favorites || []),
+        topTheme: this.getTopTheme(this.preferences.favorites || []),
+        favoritesPerDay: daysInstalled > 0 ? (favoritesCount / daysInstalled) : favoritesCount,
+        version: '3.0.0'
       };
+
+      // Load analytics events and compute additional aggregates
+      try {
+        const events = await StorageHelper.getAnalyticsEvents();
+        // Top favorited quote (by reference or text)
+        const topFav = this._computeTopEventQuote(events, 'fav');
+        const topShared = this._computeTopEventQuote(events, 'share');
+
+        this.stats.topFavorited = topFav || '-';
+        this.stats.topShared = topShared || '-';
+
+        // Theme distribution from 'fav' events
+        const themeDist = this._computeThemeDistributionFromEvents(events);
+        this.stats.themeDistribution = themeDist;
+
+        // Favorites trend (last 30 days)
+        this.stats.favoritesTrend = this._computeFavoritesTrend(events, 30);
+      } catch (err) {
+        console.warn('Failed to load analytics events', err);
+        this.stats.topFavorited = '-';
+        this.stats.topShared = '-';
+        this.stats.themeDistribution = {};
+        this.stats.favoritesTrend = [];
+      }
     } catch (error) {
       console.error('Error loading statistics:', error);
       this.stats = {
         totalQuotes: 0,
         favoritesCount: 0,
         daysInstalled: 0,
-        version: '2.0.0'
+        favoriteRatio: 0,
+        topBook: '-',
+        topTheme: '-',
+        favoritesPerDay: 0,
+        version: '3.0.0'
       };
+    }
+  }
+
+  getTopBook(favorites) {
+    if (!Array.isArray(favorites) || favorites.length === 0) {
+      return '-';
+    }
+
+    const counts = new Map();
+    favorites.forEach((quote) => {
+      const parsed = QuoteUtils.parseQuote(quote);
+      const book = QuoteUtils.extractBookName(parsed.reference);
+      counts.set(book, (counts.get(book) || 0) + 1);
+    });
+
+    let topBook = '-';
+    let topCount = 0;
+    counts.forEach((count, book) => {
+      if (count > topCount) {
+        topBook = book;
+        topCount = count;
+      }
+    });
+
+    return topBook;
+  }
+
+  getTopTheme(favorites) {
+    if (!Array.isArray(favorites) || favorites.length === 0) {
+      return '-';
+    }
+
+    const counts = new Map();
+    favorites.forEach((quote) => {
+      const parsed = QuoteUtils.parseQuote(quote);
+      const themes = QuoteUtils.detectThemes(parsed.text);
+      themes.forEach((theme) => {
+        counts.set(theme, (counts.get(theme) || 0) + 1);
+      });
+    });
+
+    if (counts.size === 0) {
+      return '-';
+    }
+
+    let topTheme = '-';
+    let topCount = 0;
+    counts.forEach((count, theme) => {
+      if (count > topCount) {
+        topTheme = theme;
+        topCount = count;
+      }
+    });
+
+    return topTheme;
+  }
+
+  async loadCloudSyncStatus() {
+    this.cloudSync.lastSync = this.preferences.favoritesLastSync || null;
+
+    return new Promise((resolve) => {
+      if (!chrome?.storage?.sync?.getBytesInUse) {
+        this.cloudSync.status = 'unavailable';
+        resolve();
+        return;
+      }
+
+      chrome.storage.sync.getBytesInUse(null, (bytesUsed) => {
+        if (chrome.runtime.lastError) {
+          this.cloudSync.status = 'error';
+          resolve();
+          return;
+        }
+
+        this.cloudSync.status = bytesUsed > 0 ? 'active' : 'idle';
+        resolve();
+      });
+    });
+  }
+
+  renderCloudSyncUI() {
+    const statusEl = document.getElementById('cloudSyncStatus');
+    const lastEl = document.getElementById('cloudSyncLast');
+    if (!statusEl || !lastEl) {
+      return;
+    }
+
+    const keyByStatus = {
+      active: 'options.cloudSyncStatusActive',
+      idle: 'options.cloudSyncStatusIdle',
+      syncing: 'options.cloudSyncStatusSyncing',
+      error: 'options.cloudSyncStatusError',
+      unavailable: 'options.cloudSyncStatusUnavailable'
+    };
+
+    statusEl.textContent = I18nHelper.t(keyByStatus[this.cloudSync.status] || keyByStatus.idle);
+
+    if (this.cloudSync.lastSync) {
+      const formatted = QuoteUtils.formatDate(this.cloudSync.lastSync);
+      lastEl.textContent = `${I18nHelper.t('options.cloudSyncLastPrefix')} ${formatted}`;
+    } else {
+      lastEl.textContent = I18nHelper.t('options.cloudSyncNever');
+    }
+  }
+
+  renderAnalyticsInsights() {
+    const insightsEl = document.getElementById('analyticsInsights');
+    if (!insightsEl) return;
+
+    insightsEl.innerHTML = '';
+
+    const insights = [];
+    insights.push(`${I18nHelper.t('options.insightFavoriteCount')}: ${this.stats.favoritesCount}`);
+    insights.push(`${I18nHelper.t('options.insightCoverage')}: ${this.stats.favoriteRatio.toFixed(1)}%`);
+
+    if (this.stats.topBook !== '-') {
+      insights.push(`${I18nHelper.t('options.insightTopBook')}: ${this.stats.topBook}`);
+    }
+
+    if (this.stats.topTheme !== '-') {
+      insights.push(`${I18nHelper.t('options.insightTopTheme')}: ${I18nHelper.t(`options.theme.${this.stats.topTheme}`)}`);
+    }
+
+    insights.push(`${I18nHelper.t('options.insightFavoritesPerDay')}: ${this.stats.favoritesPerDay.toFixed(2)}`);
+
+    if (this.stats.topFavorited && this.stats.topFavorited !== '-') {
+      insights.push(`${I18nHelper.t('options.insightTopFavorited')}: ${this.stats.topFavorited}`);
+    }
+
+    if (this.stats.topShared && this.stats.topShared !== '-') {
+      insights.push(`${I18nHelper.t('options.insightTopShared')}: ${this.stats.topShared}`);
+    }
+
+    insights.forEach((line) => {
+      const li = document.createElement('li');
+      li.textContent = line;
+      insightsEl.appendChild(li);
+    });
+
+    // Optionally render a tiny sparkline for favoritesTrend
+    if (Array.isArray(this.stats.favoritesTrend) && this.stats.favoritesTrend.length > 0) {
+      const spark = document.createElement('canvas');
+      spark.width = 200;
+      spark.height = 40;
+      const ctx = spark.getContext('2d');
+      // Simple line spark
+      const vals = this.stats.favoritesTrend;
+      const max = Math.max(...vals, 1);
+      ctx.strokeStyle = '#4b6ef6';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      vals.forEach((v, i) => {
+        const x = (i / (vals.length - 1)) * spark.width;
+        const y = spark.height - (v / max) * (spark.height - 4) - 2;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      const wrapper = document.createElement('div');
+      wrapper.style.marginTop = '8px';
+      wrapper.appendChild(spark);
+      insightsEl.appendChild(wrapper);
+    }
+  }
+
+  _computeTopEventQuote(events = [], type = 'fav') {
+    const counts = new Map();
+    events.filter(e => e.type === type).forEach(e => {
+      const key = e.reference || e.quote || '(unknown)';
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+    let top = null; let topCount = 0;
+    counts.forEach((c, k) => { if (c > topCount) { top = k; topCount = c; } });
+    return top;
+  }
+
+  _computeThemeDistributionFromEvents(events = []) {
+    const counts = {};
+    events.filter(e => e.type === 'fav').forEach(e => {
+      try {
+        const parsed = QuoteUtils.parseQuote(e.quote || '');
+        const themes = QuoteUtils.detectThemes(parsed.text || '');
+        themes.forEach(t => { counts[t] = (counts[t] || 0) + 1; });
+      } catch (err) { }
+    });
+    return counts;
+  }
+
+  _computeFavoritesTrend(events = [], days = 30) {
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const buckets = new Array(days).fill(0);
+    events.filter(e => e.type === 'fav').forEach(e => {
+      const age = now - (e.ts || 0);
+      const idx = Math.floor(age / dayMs);
+      if (idx >= 0 && idx < days) {
+        // recent days: idx=0 means today; we want reversed order
+        buckets[days - 1 - idx] += 1;
+      }
+    });
+    return buckets;
+  }
+
+  async syncFavoritesNow() {
+    try {
+      this.cloudSync.status = 'syncing';
+      this.renderCloudSyncUI();
+
+      const now = Date.now();
+      this.preferences.favoritesLastSync = now;
+
+      await new Promise((resolve, reject) => {
+        chrome.storage.sync.set({
+          favorites: this.preferences.favorites || [],
+          favoritesLastSync: now
+        }, () => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+            return;
+          }
+          resolve();
+        });
+      });
+
+      this.cloudSync.status = 'active';
+      this.cloudSync.lastSync = now;
+      this.renderCloudSyncUI();
+      this.showSuccess(I18nHelper.t('options.cloudSyncSuccess'));
+    } catch (error) {
+      console.error('Cloud sync failed:', error);
+      this.cloudSync.status = 'error';
+      this.renderCloudSyncUI();
+      this.showError(I18nHelper.t('options.cloudSyncFailed'));
     }
   }
 
@@ -118,6 +388,24 @@ class BibleQuotesOptions {
     document.getElementById('totalQuotes').textContent = this.stats.totalQuotes.toLocaleString();
     document.getElementById('favoriteCount').textContent = this.stats.favoritesCount;
     document.getElementById('daysInstalled').textContent = this.stats.daysInstalled;
+    document.getElementById('version').textContent = this.stats.version;
+
+    const ratioEl = document.getElementById('favoriteRatio');
+    if (ratioEl) ratioEl.textContent = `${this.stats.favoriteRatio.toFixed(1)}%`;
+
+    const topBookEl = document.getElementById('topBook');
+    if (topBookEl) topBookEl.textContent = this.stats.topBook;
+
+    const topThemeEl = document.getElementById('topTheme');
+    if (topThemeEl) {
+      topThemeEl.textContent = this.stats.topTheme === '-' ? '-' : I18nHelper.t(`options.theme.${this.stats.topTheme}`);
+    }
+
+    const favoritesPerDayEl = document.getElementById('favoritesPerDay');
+    if (favoritesPerDayEl) favoritesPerDayEl.textContent = this.stats.favoritesPerDay.toFixed(2);
+
+    this.renderCloudSyncUI();
+    this.renderAnalyticsInsights();
   }
 
   /**
@@ -166,6 +454,7 @@ class BibleQuotesOptions {
       this.preferences.language = e.target.value;
       await this.savePreferences(false);
       await I18nHelper.setLocale(this.preferences.language);
+      this.updateUI();
       await StorageHelper.removeLocal([STORAGE_KEYS.QUOTES, STORAGE_KEYS.QUOTE_LANGUAGE]);
       this.showSuccess(I18nHelper.t('options.notificationQuoteLanguageUpdated'));
     });
@@ -196,6 +485,13 @@ class BibleQuotesOptions {
       this.resetToDefaults();
     });
 
+    const syncNowBtn = document.getElementById('syncFavoritesNow');
+    if (syncNowBtn) {
+      syncNowBtn.addEventListener('click', async () => {
+        await this.syncFavoritesNow();
+      });
+    }
+
     // Footer links
     document.getElementById('privacyLink').addEventListener('click', (e) => {
       e.preventDefault();
@@ -211,7 +507,12 @@ class BibleQuotesOptions {
   /**
    * Save preferences to Chrome storage
    */
-  async savePreferences(showSuccessMessage = true) {
+  async savePreferences(showSuccessMessage = true, touchFavoritesSync = false) {
+    if (touchFavoritesSync) {
+      this.preferences.favoritesLastSync = Date.now();
+      this.cloudSync.lastSync = this.preferences.favoritesLastSync;
+    }
+
     return new Promise((resolve) => {
       chrome.storage.sync.set(this.preferences, () => {
         if (showSuccessMessage) {
@@ -263,8 +564,9 @@ class BibleQuotesOptions {
         
         if (Array.isArray(favorites)) {
           this.preferences.favorites = favorites;
-          await this.savePreferences();
+          await this.savePreferences(true, true);
           await this.loadStatistics();
+          await this.loadCloudSyncStatus();
           this.updateUI();
           this.showSuccess(I18nHelper.t('options.notificationImportSuccess'));
         } else {
@@ -285,8 +587,9 @@ class BibleQuotesOptions {
   async clearFavorites() {
     if (confirm(I18nHelper.t('options.confirmClearFavorites'))) {
       this.preferences.favorites = [];
-      await this.savePreferences();
+      await this.savePreferences(true, true);
       await this.loadStatistics();
+      await this.loadCloudSyncStatus();
       this.updateUI();
       this.showSuccess(I18nHelper.t('options.favoritesCleared'));
     }
@@ -302,7 +605,7 @@ class BibleQuotesOptions {
         preferences: this.preferences,
         quotes: quotes,
         exportDate: new Date().toISOString(),
-        version: '2.0.0'
+        version: '3.0.0'
       };
       
       const dataStr = JSON.stringify(exportData, null, 2);
@@ -393,11 +696,13 @@ class BibleQuotesOptions {
           enableBingQuotes: false,
           enableDuckDuckGoQuotes: false,
           favorites: [],
+          favoritesLastSync: null,
           installDate: Date.now()
         };
         
-        await this.savePreferences();
+        await this.savePreferences(true, true);
         await this.loadStatistics();
+        await this.loadCloudSyncStatus();
         this.updateUI();
         this.showSuccess(I18nHelper.t('options.notificationResetSuccess'));
       } catch (error) {
