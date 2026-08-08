@@ -3,31 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bible Quotes</title>
+  <title data-i18n="popup.pageTitle">Bible Quotes</title>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Favorites modal styles (lightweight, popup-only) */
+    .favorites-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .favorites-modal {
+      width: 320px;
+      max-height: 70vh;
+      overflow: auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      font-family: inherit;
+    }
+    .favorites-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .favorites-list { list-style: none; padding: 0; margin: 0; }
+    .favorites-item { padding: 8px; border-bottom: 1px solid #eee; display:flex; gap:8px; align-items:flex-start }
+    .favorites-text { flex: 1; font-size: 13px; color: #222 }
+    .favorites-actions { display:flex; gap:6px }
+    .btn-small { padding:6px 8px; border-radius:8px; border:none; cursor:pointer }
+  </style>
 </head>
 <body>
   <div class="popup-container">
     <!-- Header Section -->
     <header class="header">
-      <h1>📖 Bible Quotes</h1>
-      <p>Daily inspiration from scripture</p>
+      <h1 data-i18n="popup.title">📖 Bible Quotes</h1>
+      <p data-i18n="popup.subtitle">Daily inspiration from scripture</p>
     </header>
 
     <!-- Loading State -->
     <div id="loading" class="loading" style="display: none;">
       <div class="loading-spinner"></div>
-      <span>Loading quotes...</span>
+      <span data-i18n="popup.loading">Loading quotes...</span>
     </div>
 
     <!-- Error State -->
     <div id="error" class="error" style="display: none;">
-      <p>Could not load quotes. Please try again.</p>
+      <p data-i18n="popup.errorLoadQuotes">Could not load quotes. Please try again.</p>
     </div>
 
     <!-- Success Message -->
     <div id="success" class="success" style="display: none;">
-      <p>Settings saved successfully!</p>
+      <p data-i18n="popup.notificationSettingsSaved">Settings saved successfully!</p>
     </div>
 
     <!-- Quote Display Section -->
@@ -38,50 +71,79 @@
     <!-- Controls Section -->
     <section class="controls">
       <div class="control-group">
-        <label for="quoteCount" class="control-label">Number of quotes to display:</label>
-        <select id="quoteCount" aria-label="Select number of quotes">
-          <option value="1">1 quote</option>
-          <option value="2">2 quotes</option>
-          <option value="3">3 quotes</option>
+        <label for="quoteCount" class="control-label" data-i18n="popup.quoteCountLabel">Number of quotes to display:</label>
+        <select id="quoteCount" aria-label="Select number of quotes" data-i18n-attr="aria-label" data-i18n="popup.quoteCountLabel">
+          <option value="1" data-i18n="popup.option1">1 quote</option>
+          <option value="2" data-i18n="popup.option2">2 quotes</option>
+          <option value="3" data-i18n="popup.option3">3 quotes</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="quoteLanguage" class="control-label" data-i18n="popup.quoteLanguageLabel">Quote language:</label>
+        <select id="quoteLanguage" aria-label="Select quote language" data-i18n-attr="aria-label" data-i18n="popup.quoteLanguageLabel">
+          <option value="en" data-i18n="popup.languageEnglish">English</option>
+          <option value="es" data-i18n="popup.languageSpanish">Spanish</option>
         </select>
       </div>
 
       <div class="control-group">
         <div class="checkbox-wrapper">
-          <input type="checkbox" id="enableQuotes" aria-label="Enable quotes on Google searches">
-          <label for="enableQuotes" class="control-label">Show quotes on Google searches</label>
+          <input type="checkbox" id="enableQuotes" aria-label="Enable quotes on Google searches" data-i18n="popup.enableQuotesLabel" data-i18n-attr="aria-label">
+          <label for="enableQuotes" class="control-label" data-i18n="popup.enableQuotesLabel">Show quotes on Google searches</label>
         </div>
       </div>
 
       <div class="control-group">
         <div class="checkbox-wrapper">
-          <input type="checkbox" id="enableFavorites" aria-label="Enable favorites feature">
-          <label for="enableFavorites" class="control-label">Enable favorites feature</label>
+          <input type="checkbox" id="enableFavorites" aria-label="Enable favorites feature" data-i18n="popup.enableFavoritesLabel" data-i18n-attr="aria-label">
+          <label for="enableFavorites" class="control-label" data-i18n="popup.enableFavoritesLabel">Enable favorites feature</label>
         </div>
       </div>
     </section>
 
     <!-- Action Buttons -->
     <section class="actions">
-      <button id="newQuoteBtn" class="btn" aria-label="Get new quote">
+      <button id="newQuoteBtn" class="btn" data-i18n-attr="aria-label" data-i18n="popup.newQuote">
         🔄 New Quote
       </button>
+      <button id="viewFavoritesBtn" class="btn btn-secondary" data-i18n-attr="aria-label" data-i18n="popup.viewFavorites">
+        ⭐ View Favorites
+      </button>
       
-      <button id="favoriteBtn" class="btn btn-secondary" aria-label="Add to favorites" style="display: none;">
+      <button id="favoriteBtn" class="btn btn-secondary" aria-label="Add to favorites" style="display: none;" data-i18n-attr="aria-label" data-i18n="popup.addToFavorites">
         ⭐ Add to Favorites
       </button>
       
-      <button id="shareBtn" class="btn btn-secondary" aria-label="Share quote">
+      <button id="shareBtn" class="btn btn-secondary" data-i18n-attr="aria-label" data-i18n="popup.shareQuote">
         📤 Share Quote
       </button>
     </section>
 
     <!-- Footer -->
     <footer class="footer">
-      <p>Version 2.0.0</p>
+      <p data-i18n="popup.version">Version 2.0.0</p>
     </footer>
   </div>
 
+    <!-- Favorites Modal (hidden by default) -->
+    <div id="favoritesModal" class="favorites-modal-backdrop" style="display:none;">
+      <div class="favorites-modal" role="dialog" aria-modal="true">
+        <div class="favorites-header">
+          <strong data-i18n="popup.yourFavorites">Your Favorites</strong>
+          <button id="favoritesCloseBtn" class="btn-small" data-i18n="popup.close">Close</button>
+        </div>
+        <ul id="favoritesList" class="favorites-list"></ul>
+        <div style="margin-top:8px;text-align:right;"><button id="favoritesClearBtn" class="btn-small" data-i18n="popup.favoritesClearAll">Clear All</button></div>
+      </div>
+    </div>
+
+  <!-- Scripts in correct dependency order -->
+  <script src="constants.js"></script>
+  <script src="utils.js"></script>
+  <script src="storageHelper.js"></script>
+  <script src="preferencesManager.js"></script>
+  <script src="i18n.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

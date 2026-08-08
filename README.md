@@ -16,11 +16,18 @@ A beautiful Chrome extension that provides daily Bible quotes and inspiration. F
 - **Share Functionality**: Share quotes via native sharing or copy to clipboard
 
 ### 🎨 User Experience
-- **Modern UI**: Beautiful, responsive design with gradient backgrounds
-- **Dark Mode Support**: Automatic dark mode detection and styling
-- **Loading States**: Smooth loading animations and error handling
-- **Keyboard Shortcuts**: Quick access with `Ctrl+Shift+B` (or `Cmd+Shift+B` on Mac)
-- **Accessibility**: Full ARIA support and keyboard navigation
+
+## **Functionality Summary**
+
+- **Daily Quote Delivery**: Shows 1–3 curated Bible verses in a friendly popup with smooth loading and error states.
+- **Persistent Preferences**: Stores user settings (quote count, enabled search engines, favorites, auto-refresh) in Chrome storage and restores them across sessions.
+- **Favorites Management**: Users can save quotes to favorites, view counts in the Options page, export/import favorites as JSON, and clear favorites.
+- **Share & Export**: Native sharing where available and clipboard fallback; export/import of full extension data for backups.
+- **Search Engine Integration**: Optional display of quotes on search engine results pages (Google, Bing, DuckDuckGo) controlled via settings.
+- **Options & Statistics**: A full Options page to configure the extension, view usage statistics (total quotes, favorites, days installed), and manage data.
+- **Auto-Refresh & Shortcuts**: Optional automatic refresh and keyboard shortcuts for quick quote generation.
+- **Robust UX Improvements**: Modern responsive UI, dark-mode-aware styling, keyboard accessibility, and clear success/error messaging for actions.
+- **Offline-Ready**: Quotes are stored locally so the extension continues to work without external network calls after initial load.
 
 ### ⚙️ Advanced Features
 - **Options Page**: Comprehensive settings and data management
@@ -104,7 +111,8 @@ Bible_quotes/
 ├── options.html          # Options page
 ├── options.js            # Options functionality
 ├── styles.css            # Shared styles
-├── quotes.json           # Bible quotes data
+├── quotes_en.json        # English Bible quotes data
+├── quotes_es.json        # Spanish Bible quotes data
 ├── icons/                # Extension icons
 │   ├── icon16.png
 │   ├── icon32.png

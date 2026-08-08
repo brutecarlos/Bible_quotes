@@ -19,8 +19,7 @@
   ],
   
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
   
   "action": {
@@ -48,14 +47,14 @@
         "https://www.bing.com/*",
         "https://duckduckgo.com/*"
       ],
-      "js": ["content.js"],
+      "js": ["constants.js", "utils.js", "storageHelper.js", "preferencesManager.js", "i18n.js", "content.js"],
       "run_at": "document_end"
     }
   ],
   
   "web_accessible_resources": [
     {
-      "resources": ["quotes.json", "styles.css"],
+      "resources": ["quotes_en.json", "quotes_es.json", "styles.css", "locales/messages_en.json", "locales/messages_es.json"],
       "matches": ["<all_urls>"]
     }
   ],
