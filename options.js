@@ -102,6 +102,10 @@ class BibleQuotesOptions {
 
         // Favorites trend (last 30 days)
         this.stats.favoritesTrend = this._computeFavoritesTrend(events, 30);
+        // Counts and activity
+        this.stats.countsByType = this._computeCountsByType(events);
+        this.stats.mostActiveHour = this._computeMostActiveHour(events);
+        this.stats.mostActiveDay = this._computeMostActiveDay(events);
       } catch (err) {
         console.warn('Failed to load analytics events', err);
         this.stats.topFavorited = '-';
@@ -122,6 +126,45 @@ class BibleQuotesOptions {
         version: '3.0.0'
       };
     }
+  }
+
+  async _clearAnalyticsData() {
+    try {
+      await StorageHelper.setLocal({ [ANALYTICS_CONFIG.EVENTS_KEY]: [] });
+    } catch (err) {
+      console.warn('Failed to clear analytics events', err);
+    }
+  }
+
+  _computeCountsByType(events = []) {
+    return events.reduce((acc, e) => {
+      acc[e.type] = (acc[e.type] || 0) + 1;
+      return acc;
+    }, {});
+  }
+
+  _computeMostActiveHour(events = []) {
+    const hours = new Array(24).fill(0);
+    events.forEach(e => {
+      const d = new Date(e.ts || 0);
+      const h = d.getHours();
+      hours[h]++;
+    });
+    let max = 0; let idx = 0;
+    hours.forEach((c, i) => { if (c > max) { max = c; idx = i; } });
+    return `${idx}:00 - ${idx}:59`;
+  }
+
+  _computeMostActiveDay(events = []) {
+    const counts = {};
+    events.forEach(e => {
+      const d = new Date(e.ts || 0);
+      const key = d.toISOString().slice(0,10);
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    let top = null; let max = 0;
+    Object.keys(counts).forEach(k => { if (counts[k] > max) { max = counts[k]; top = k; } });
+    return top || '-';
   }
 
   getTopBook(favorites) {
@@ -458,7 +501,12 @@ class BibleQuotesOptions {
       analyticsEl.addEventListener('change', (e) => {
         this.preferences.enableLocalAnalytics = e.target.checked;
         // persist to sync storage
-        chrome.storage.sync.set({ enableLocalAnalytics: e.target.checked }, () => {});
+        chrome.storage.sync.set({ enableLocalAnalytics: e.target.checked }, async () => {
+          // If user disabled local analytics, clear stored events
+          if (!e.target.checked) {
+            try { await StorageHelper.setLocal({ [ANALYTICS_CONFIG.EVENTS_KEY]: [] }); } catch(err) { }
+          }
+        });
       });
     }
 
@@ -501,6 +549,17 @@ class BibleQuotesOptions {
     if (syncNowBtn) {
       syncNowBtn.addEventListener('click', async () => {
         await this.syncFavoritesNow();
+      });
+    }
+
+    const clearAnalyticsBtn = document.getElementById('clearAnalytics');
+    if (clearAnalyticsBtn) {
+      clearAnalyticsBtn.addEventListener('click', async () => {
+        if (!confirm(I18nHelper.t('options.clearAnalyticsConfirm'))) return;
+        await this._clearAnalyticsData();
+        await this.loadStatistics();
+        this.updateUI();
+        this.showSuccess(I18nHelper.t('options.analyticsCleared'));
       });
     }
 

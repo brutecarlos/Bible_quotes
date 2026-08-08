@@ -205,6 +205,19 @@ class StorageHelper {
   }
 
   /**
+   * Set local analytics events directly (used to clear)
+   * @param {Array} events
+   */
+  static async setAnalyticsEvents(events = []) {
+    try {
+      const trimmed = this._trimEventsArray(events || []);
+      await this.setLocal({ [ANALYTICS_CONFIG.EVENTS_KEY]: trimmed });
+    } catch (err) {
+      console.error('Failed to set analytics events', err);
+    }
+  }
+
+  /**
    * Retrieve analytics events from local storage
    * @returns {Promise<Array>} events
    */

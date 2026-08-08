@@ -15,7 +15,7 @@ We may update this Privacy Policy from time to time. Any changes will be posted 
 4. Local Analytics (Optional)
 Bible Quotes stores minimal, non-personal usage events locally in your browser to compute in-extension analytics such as most-saved verses, theme distributions, and short-term trends. Examples of stored events: action type (show, favorite, unfavorite, share), quote text or reference, and a timestamp. These events are stored only in your browser's local storage and are not transmitted to any external server.
 
-You can opt out at any time from the extension Options page; opting out will stop new events from being recorded. Events are retained only for a limited period (default: 90 days) and are automatically trimmed to a reasonable maximum size. If you disable local analytics, you may also clear existing analytics data via the Options page or by uninstalling the extension.
+You can opt out at any time from the extension Options page; opting out will stop new events from being recorded. When you opt out you may choose to clear previously collected analytics data from the Options page — this permanently removes locally stored events. Events are retained only for a limited period (default: 90 days) and older events are automatically trimmed to a reasonable maximum size. No analytics data is transmitted off your device.
 
 4. Contact Us
 If you have any questions or concerns about this Privacy Policy, please contact us at carlosluquetrad@gmail.com
