@@ -230,7 +230,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔄 Changelog
 
-### Version 2.0.0 (Current)
+For the full release history, see [CHANGELOG.md](CHANGELOG.md).
+
+### Version 3.0.0 (Current)
+- Added full English and Spanish localization for the popup, options page, and injected search quotes
+- Added automatic language detection plus saved language preference support for live UI updates
+- Added a Spanish quote dataset and language-aware quote loading/caching
+- Improved search-page favorites with inline star toggles, clearer actions, and a first-time tooltip
+- Refactored the extension into shared modules for constants, storage, preferences, utilities, and i18n
+
+### Version 2.0.0
 - Complete UI redesign with modern styling
 - Added favorites functionality
 - Implemented sharing capabilities
@@ -240,7 +249,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Added keyboard shortcuts
 - Enhanced accessibility features
 
-### Version 1.1.2 (Previous)
+### Version 1.1.2
 - Basic quote display functionality
 - Google search integration
 - Simple settings management

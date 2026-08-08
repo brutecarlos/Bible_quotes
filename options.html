@@ -105,6 +105,17 @@
       gap: 15px;
       margin-top: 20px;
     }
+
+    .changelog-list {
+      margin: 12px 0 0;
+      padding-left: 20px;
+      color: #2c3e50;
+    }
+
+    .changelog-list li {
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
     
     .btn-small {
       padding: 8px 16px;
@@ -266,9 +277,26 @@
       </div>
     </section>
 
+    <!-- Changelog -->
+    <section class="options-section">
+      <h2 data-i18n="options.changelogTitle">What's New in 3.0</h2>
+
+      <div class="option-description" data-i18n="options.changelogDescription">
+        Highlights from the latest major update.
+      </div>
+
+      <ul class="changelog-list">
+        <li data-i18n="options.changelogItem1">Full English and Spanish localization across the popup, options page, and injected search quotes.</li>
+        <li data-i18n="options.changelogItem2">Automatic language detection with saved language preference support for live menu updates.</li>
+        <li data-i18n="options.changelogItem3">New Spanish quote library plus language-aware quote caching for faster loading.</li>
+        <li data-i18n="options.changelogItem4">Improved favorites on search pages with inline star toggles, clearer actions, and first-time guidance.</li>
+        <li data-i18n="options.changelogItem5">Refactored shared architecture with centralized constants, storage helpers, preferences management, and i18n utilities.</li>
+      </ul>
+    </section>
+
     <!-- Footer -->
     <footer class="footer">
-      <p data-i18n="options.footerTagline">Bible Quotes Extension v2.0.0 • Made with ❤️ for daily inspiration</p>
+      <p data-i18n="options.footerTagline">Bible Quotes Extension v3.0.0 • Made with ❤️ for daily inspiration</p>
       <p><a href="#" id="privacyLink" data-i18n="options.privacyPolicy">Privacy Policy</a> • <a href="#" id="supportLink" data-i18n="options.support">Support</a></p>
     </footer>
   </div>

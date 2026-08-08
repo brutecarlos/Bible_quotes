@@ -7,7 +7,7 @@ The Bible Quotes Chrome extension has been completely transformed from a basic q
 
 | Aspect | Before | After |
 |--------|--------|-------|
-| **Version** | 1.1.2 | 2.0.0 |
+| **Version** | 1.1.2 | 3.0.0 |
 | **Code Quality** | Basic JavaScript | Modern ES6+ with classes |
 | **UI Design** | Simple HTML/CSS | Modern, responsive design |
 | **Features** | Basic quote display | 15+ advanced features |
@@ -16,6 +16,13 @@ The Bible Quotes Chrome extension has been completely transformed from a basic q
 | **Architecture** | Procedural | Object-oriented |
 
 ## ✨ Major Improvements Implemented
+
+### 0. **Version 3.0 Release Highlights**
+- ✅ **Full Localization**: Popup, options page, and injected search quotes now support English and Spanish
+- ✅ **Language Switching**: Saved preference-based language switching with immediate UI refresh
+- ✅ **Spanish Quote Library**: Added a dedicated Spanish quote dataset with locale-aware caching
+- ✅ **Enhanced Search Favorites**: Inline favorite toggles, clearer actions, and first-use tooltip on search pages
+- ✅ **Shared App Infrastructure**: New centralized helpers for constants, preferences, storage, utilities, and i18n
 
 ### 1. **Modern Code Architecture**
 - **ES6+ JavaScript**: Converted to modern JavaScript with classes, async/await, and arrow functions
@@ -127,6 +134,13 @@ The Bible Quotes Chrome extension has been completely transformed from a basic q
 - Simple settings
 - Google search integration
 - Basic styling
+
+### New Features (3.0.0)
+- **Full App Localization**: English and Spanish support across popup, options, and search injection UI
+- **Automatic Locale Handling**: Saved language preferences and live re-translation of extension menus
+- **Spanish Quotes Support**: Added `quotes_es.json` and locale-aware quote loading/storage
+- **Search Favorites UX Upgrade**: Inline star toggle, stronger visual affordances, and first-time tooltip
+- **Core Module Refactor**: Added `constants.js`, `preferencesManager.js`, `storageHelper.js`, `utils.js`, and `i18n.js`
 
 ### New Features (2.0.0)
 - **15+ New Features** including:
